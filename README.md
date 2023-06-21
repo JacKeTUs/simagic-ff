@@ -8,12 +8,14 @@ In that repository - copy of pidff driver from 6.3 kernel with some patches (rem
 And that's basically it
 
 ## What devices are supported?
-Bases:
+### Bases:
 1. Simagic Alpha Mini
 2. Simagic Alpha
 3. Simagic Alpha U
+
 Just because they have identical VendorID/ProductID
-Wheel rims:
+
+### Wheel rims:
 Tested on GT1, and all buttons works perfectly.
 
 
