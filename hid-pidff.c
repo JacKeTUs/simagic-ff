@@ -1233,8 +1233,6 @@ int hid_pidff_init_simagic(struct hid_device *hid)
 	int max_effects;
 	int error;
 
-	hid_info(hid, "starting pid init\n");
-
 	if (list_empty(&hid->report_enum[HID_OUTPUT_REPORT].report_list)) {
 		hid_dbg(hid, "not a PID device, no output report\n");
 		return -ENODEV;
