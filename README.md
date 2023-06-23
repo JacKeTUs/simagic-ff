@@ -24,8 +24,7 @@ Tested on GT1, and all buttons works perfectly. I suspect that all rims will wor
 3. Setup through proprietary Simagic soft (with [some tweaking](#how-to-set-up-a-base-parameters))
 
 ## What does not work?
-1. Telemetry functions (Shift lights, FX-Pro display)
-Mostly because telemetry works only with proprietary soft, which can't get access to shared memory chunks from games.
+1. Telemetry functions (Shift lights, FX-Pro display), mostly because telemetry works only with proprietary soft, which can't get access to shared memory chunks from games.
 2. I did not test `Firmware Update` function. Use it on your own risk.
 
 ## How to use that driver?
