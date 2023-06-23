@@ -13,7 +13,7 @@ And that's basically it
 2. Simagic Alpha
 3. Simagic Alpha U
 
-Just because they have identical VendorID/ProductID
+Just because they have identical VendorID/ProductID (`0x0483` `0x0522`)
 
 ### Wheel rims:
 Tested on GT1, and all buttons works perfectly.
@@ -38,7 +38,28 @@ I'm planning to write another soft, which will copy functionality from AlphaMana
 
 
 ## How to use that driver?
-1. Install linux-headers-$(uname -r)
+You can install it through DKMS or manually.
+### DKMS
+1. Install `dkms`
+2. Clone repository to /usr/src/simagic-ff
+3. Install the module: 
+`sudo dkms install /usr/src/new-lg4ff`
+4. Update initramfs:
+`sudo update-initramfs -u`
+5. Reboot
+
+To remove module:
+`sudo dkms remove simagic-ff/<version> --all`
+### Manually 
+
+1. Install `linux-headers-$(uname -r)`
 2. Clone repository
 3. `make`
 4. `sudo insmod hid-simagic-ff.ko`
+
+To unload module:
+`sudo rmmod hid_simagic_ff`
+
+
+## DISCLAIMER
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
