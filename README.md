@@ -42,10 +42,3 @@ I'm planning to write another soft, which will copy functionality from AlphaMana
 2. Clone repository
 3. `make`
 4. `sudo insmod hid-simagic-ff.ko`
-
-
-## How to get rid of deadzone?
-You need to calibrate wheel using standart soft
-```
-evdev-joystick --evdev /dev/input/by-id/usb-STMicroelectronics_alpha_feedback_wheel_simulator_*-event-joystick --axis 0 --deadzone 0
-```

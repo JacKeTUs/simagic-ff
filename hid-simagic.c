@@ -31,17 +31,27 @@ static int simagic_probe(struct hid_device *hdev, const struct hid_device_id *id
 		hid_err(hdev, "hw start failed\n");
 		goto err;
 	}
-
+	
 	return 0;
 err:
 	return ret;
 }
 
+static int simagic_input_configured(struct hid_device *hdev,
+				struct hid_input *hidinput)
+{
+	struct input_dev *input = hidinput->input;
+	input_set_abs_params(input, ABS_X, 
+		input->absinfo[ABS_X].minimum, input->absinfo[ABS_X].maximum, 0, 0);
+
+	return 0;
+}
 
 static struct hid_driver simagic_ff = {
 	.name = "simagic-ff",
 	.id_table = simagic_devices,
 	.probe = simagic_probe,
+	.input_configured = simagic_input_configured,
 };
 module_hid_driver(simagic_ff);
 
