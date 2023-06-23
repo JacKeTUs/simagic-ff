@@ -25,7 +25,8 @@ Tested on GT1, and all buttons works perfectly. I suspect that all rims will wor
 
 ## What does not work?
 1. Telemetry functions (Shift lights, FX-Pro display), mostly because telemetry works only with proprietary soft, which can't get access to shared memory chunks from games.
-2. I did not test `Firmware Update` function. Use it on your own risk.
+2. `Firmware Update` function. Use Windows PC or Windows VM at the moment.
+3. Driver only detects wheels in "Normal mode". Compatibility mode changes VID/PID of the wheelbase to vJoy defaults (`0x1234` `0xbead`)
 
 ## How to use that driver?
 You can install it through DKMS or manually.
@@ -55,7 +56,7 @@ To unload module:
 
 You can do it through AlphaManager or SimPro Manager with Wine. You need to tweak Wine prefix for them.
 
-AlphaManager works with only "old" bases (made before ~June 2022). SimPro 1.x launches, but graphical interface is pretty janky. SimPro 2.x works, but does not see current angle of steering wheel.
+AlphaManager works pretty good, but it recognizes only "old" bases (made before ~June 2022) with old firmware (max v108). SimPro 1.x launches, but graphical interface is pretty janky and really slow, i don't recommend using it. SimPro 2.x works with new firmware (max v159) and pretty useful.
 
 That soft uses hidraw to set up a base. You need to create `udev` rule for allow access to hidraw device:
 ```
@@ -78,18 +79,25 @@ Then you need to force Simagic soft to use hidraw, not SDL, to find devices:
     * `Enable SDL` (DWORD) - set to `0`; (yes, variable name contains  space)
 4. Now you can launch soft through that WINEPREFIX:
 
-    `WINEPREFIX=$HOME/simagic-wine wine AlphaManager.exe`
+    `WINEPREFIX=$HOME/simagic-wine wine AlphaManager.exe ` - launch your SimPro/AlphaManager from installation directory.
 
 
 I'm planning to write another soft, which will copy functionality from AlphaManager and/or SimPro Manager. Or set interfaces for settings for Oversteer, idk yet.
 
-## Known issues
+## Known issues with the driver
 
-1. When using `AlphaManager` - if you try to quickly change steering angle and/or another parameter, steering wheel becomes 'empty' and without any feedback - reconnecting the base to PC fixes it. It's unclear if it is a bug in AlphaManager or in the firmware (which we, sadly, can't fix), or in the driver
-2. If you use `WheelCheck.exe` (iRacing .exe to check FFB on the wheel), it sends some bizare parameters (like 2147483647 in saturation coefficient) to driver - and hid-core rejects it with kernel warning. It does not happening in games, and it's also unclear if it is a bug in firmware, or we need to fix pidff driver for it.
-3. Wheel firmware does not use Spring Center parameter. That is also a case on Windows
-4. Force Feedback clipping. Output queue could become full, and your kernel log will fill up with `output queue full` messages.
-5. I did not test `Firmware update` function. Use it on your own risk.
+1. If you use `WheelCheck.exe` (iRacing .exe to check FFB on the wheel), it sends some bizare parameters (like 2147483647 in saturation coefficient) to driver - and hid-core rejects it with kernel warning. It does not happening in games, and it's unclear if it is a bug in firmware, or we need to fix pidff driver for it.
+2. Force Feedback clipping. Output queue could become full, and your kernel log will fill up with `output queue full` messages.
+3. Firmware update does not work. Please use Windows machine or Windows VM for any firmware updates
+4. Wheel firmware update does not work. Please use Windows machine or Windows VM for any firmware updates
+
+## Known issues with the firmware 
+Here is some issues, which is also a case for Windows
+1. Base firmware (tested v108 and v159) does not use Spring Center parameter. It could be checked through `WheelCheck.exe`
+2. If you try to change range of the wheel when it is outside requested range - feedback will dissapear completely. Reboot and reconnect base to fix it.
+3. With base firmware greater than v108 some wheel rim functions like GT1 - "Set Rotation Angle" does not work.
+4. GT1 - with wheel firmware 3242 (latest) setting LED mode (slow/fast flashing / off / on) does not work
+
 
 ## DISCLAIMER
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
