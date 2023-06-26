@@ -19,7 +19,7 @@ Just because they have identical VendorID/ProductID (`0x0483` `0x0522`)
 Tested on GT1, and all buttons works perfectly. I suspect that all rims will work, except of FX-Pro display.
 
 ## What works?
-1. FFB (all effects from DirectInput FFB specifications)
+1. FFB (all effects from device descriptor, with [caveats](#known-issues-with-the-firmware))
 2. All inputs (wheel axis, buttons)
 3. Setup through proprietary Simagic soft (with [some tweaking](#how-to-set-up-a-base-parameters))
 
@@ -93,7 +93,7 @@ I'm planning to write another soft, which will copy functionality from AlphaMana
 
 ## Known issues with the firmware 
 Here is some issues, which is also a case for Windows
-1. Base firmware (tested v108 and v159) does not use Spring Center parameter. It could be checked through `WheelCheck.exe`
+1. Base firmware (tested v108 and v159, old revision) does not use parameter "Center Point Offset (0x60)" in Conditional Effect. For example - every "Spring" effect will center the will, there is no way now to "spring" the wheel to the left/right. It could be checked through `WheelCheck.exe`.
 2. If you try to change range of the wheel when it is outside requested range - feedback will dissapear completely. Reboot and reconnect base to fix it.
 3. With base firmware greater than v108 some wheel rim functions like GT1 - "Set Rotation Angle" does not work.
 4. GT1 - with wheel firmware 3242 (latest) setting LED mode (slow/fast flashing / off / on) does not work
