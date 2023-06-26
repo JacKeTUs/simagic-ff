@@ -82,7 +82,7 @@ Then you need to force Simagic soft to use hidraw, not SDL, to find devices:
     `WINEPREFIX=$HOME/simagic-wine wine AlphaManager.exe ` - launch your SimPro/AlphaManager from installation directory.
 
 
-I'm planning to write another soft, which will copy functionality from AlphaManager and/or SimPro Manager. Or set interfaces for settings for Oversteer, idk yet.
+I'm planning to write another soft, which will copy functionality from AlphaManager and/or SimPro Manager. Or set interfaces for settings for [Oversteer](https://github.com/berarma/oversteer), idk yet.
 
 ## Known issues with the driver
 
