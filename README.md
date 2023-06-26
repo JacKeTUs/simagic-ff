@@ -56,7 +56,7 @@ To unload module:
 
 You can do it through AlphaManager or SimPro Manager with Wine. You need to tweak Wine prefix for them.
 
-AlphaManager works pretty good, but it recognizes only "old" bases (made before ~June 2022) with old firmware (max v108). SimPro 1.x launches, but graphical interface is pretty janky and really slow, i don't recommend using it. SimPro 2.x works with new firmware (max v159) and pretty useful.
+AlphaManager works pretty good, but it recognizes only "old" bases (made before ~June 2022) with old firmware (max v108). SimPro 1.x launches, but graphical interface is pretty janky and really slow, i don't recommend using it. SimPro 2.x works with new firmware (min v159) and pretty useful.
 
 That soft uses hidraw to set up a base. You need to create `udev` rule for allow access to hidraw device:
 ```
@@ -86,8 +86,8 @@ I'm planning to write another soft, which will copy functionality from AlphaMana
 
 ## Known issues with the driver
 
-1. If you use `WheelCheck.exe` (iRacing .exe to check FFB on the wheel), it sends some bizare parameters (like 2147483647 in saturation coefficient) to driver - and hid-core rejects it with kernel warning. It does not happening in games, and it's unclear if it is a bug in firmware, or we need to fix pidff driver for it.
-2. Force Feedback clipping. Output queue could become full, and your kernel log will fill up with `output queue full` messages.
+1. ~~If you use `WheelCheck.exe` (iRacing .exe to check FFB on the wheel), it sends some bizare parameters (like 2147483647 in saturation coefficient) to driver - and hid-core rejects it with kernel warning. It does not happening in games, and it's unclear if it is a bug in firmware, or we need to fix pidff driver for it.~~ Fixed - it was unclamped PID_LOOP_COUNT, bug in pidff. 
+2. Force Feedback clipping. Output queue could become full, and your kernel log will fill up with `output queue full` messages. I could reproduce it with spamming `WheelCheck.exe` parameters, i did not see it in games at all (maybe time will tell).
 3. Firmware update does not work. Please use Windows machine or Windows VM for any firmware updates
 4. Wheel firmware update does not work. Please use Windows machine or Windows VM for any firmware updates
 
