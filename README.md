@@ -34,7 +34,7 @@ You can install it through DKMS or manually.
 1. Install `dkms`
 2. Clone repository to `/usr/src/simagic-ff`
 3. Install the module: 
-`sudo dkms install /usr/src/new-lg4ff`
+`sudo dkms install /usr/src/simagic-ff`
 4. Update initramfs:
 `sudo update-initramfs -u`
 5. Reboot
