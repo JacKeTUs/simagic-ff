@@ -56,7 +56,8 @@ To unload module:
 
 You can do it through AlphaManager or SimPro Manager with Wine. You need to tweak Wine prefix for them.
 
-AlphaManager works pretty good, but it recognizes only "old" bases (made before ~June 2022) with old firmware (max v108). SimPro 1.x launches, but graphical interface is pretty janky and really slow, i don't recommend using it. SimPro 2.x works with new firmware (min v159) and pretty useful.
+AlphaManager works pretty good, but it recognizes only "old" bases (made before ~June 2022) with old firmware (max v108). SimPro 1.x launches, but graphical interface is pretty janky and really slow, i don't recommend using it. SimPro 2.x before 0.116 works with new firmware (max v159) and pretty useful.
+
 
 That soft uses hidraw to set up a base. You need to create `udev` rule for allow access to hidraw device:
 ```
@@ -97,7 +98,7 @@ Here is some issues, which is also a case for Windows
 2. If you try to change range of the wheel when it is outside requested range - feedback will dissapear completely. Reboot and reconnect base to fix it.
 3. With base firmware greater than v108 some wheel rim functions like GT1 - "Set Rotation Angle" does not work.
 4. GT1 - with wheel firmware 3242 (latest) setting LED mode (slow/fast flashing / off / on) does not work
-
+5. Firmware v169 and SimPro2.0.116 introduced proprietary protocol for communicating to the wheelbase and does not use standart directinput ffb reports. Please, avoid firmware v169 and SimPro 2.0.116 for the time being.
 
 ## DISCLAIMER
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
