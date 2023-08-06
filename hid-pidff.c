@@ -141,6 +141,32 @@ struct pidff_usage {
 	s32 *value;
 };
 
+#define FF_EFFECT_STOPPED 0
+#define FF_EFFECT_ALLSET 1
+#define FF_EFFECT_PLAYING 2
+#define FF_EFFECT_UPDATING 3
+
+#define STOP_EFFECT(state) ((state)->flags = 0)
+
+struct pidff_effect_state {
+	struct ff_effect effect;
+	struct ff_envelope *envelope;
+	unsigned long start_at;
+	unsigned long play_at;
+	unsigned long stop_at;
+	unsigned long flags;
+	unsigned long time_playing;
+	unsigned long updated_at;
+	unsigned int phase;
+	unsigned int phase_adj;
+	unsigned int count;
+	unsigned int cmd;
+	unsigned int cmd_start_time;
+	unsigned int cmd_start_count;
+	int direction_gain;
+	int slope;
+};
+
 struct pidff_device {
 	struct hid_device *hid;
 
@@ -184,6 +210,8 @@ struct pidff_device {
 	int operation_id[sizeof(pidff_effect_operation_status)];
 
 	int pid_id[PID_EFFECTS_MAX];
+
+	struct pidff_effect_state states[PID_EFFECTS_MAX];
 };
 
 /*
@@ -301,7 +329,8 @@ static void pidff_set_effect_report(struct pidff_device *pidff,
 		pidff->block_load[PID_EFFECT_BLOCK_INDEX].value[0];
 	pidff->set_effect_type->value[0] =
 		pidff->create_new_effect_type->value[0];
-	pidff->set_effect[PID_DURATION].value[0] = effect->replay.length == 0 ? 0xffff: effect->replay.length;
+	pidff->set_effect[PID_DURATION].value[0] = 
+		effect->replay.length == 0 ? 0xffff: effect->replay.length;
 	pidff->set_effect[PID_TRIGGER_BUTTON].value[0] = effect->trigger.button;
 	pidff->set_effect[PID_TRIGGER_REPEAT_INT].value[0] =
 		effect->trigger.interval;
@@ -509,6 +538,75 @@ static void pidff_playback_pid(struct pidff_device *pidff, int pid_id, int n)
 			HID_REQ_SET_REPORT);
 }
 
+static void pidff_force_update_effect(struct pidff_device *pidff, struct ff_effect *effect)
+{
+	int type_id;
+	pidff->block_load[PID_EFFECT_BLOCK_INDEX].value[0] = pidff->pid_id[effect->id];
+	switch (effect->type) {
+	case FF_CONSTANT:
+		//pidff_request_effect_upload(pidff, pidff->type_id[PID_CONSTANT]);
+		pidff_set_constant_force_report(pidff, effect);
+		pidff_set_envelope_report(pidff, &effect->u.constant.envelope);
+		break;
+	case FF_PERIODIC:
+		switch (effect->u.periodic.waveform) {
+			case FF_SQUARE:
+				type_id = PID_SQUARE;
+				break;
+			case FF_TRIANGLE:
+				type_id = PID_TRIANGLE;
+				break;
+			case FF_SINE:
+				type_id = PID_SINE;
+				break;
+			case FF_SAW_UP:
+				type_id = PID_SAW_UP;
+				break;
+			case FF_SAW_DOWN:
+				type_id = PID_SAW_DOWN;
+				break;
+			default:
+				hid_err(pidff->hid, "invalid waveform\n");
+				type_id = -1;
+			}
+
+			//if (type_id != -1)
+			//	pidff_request_effect_upload(pidff,pidff->type_id[type_id]);
+		pidff_set_periodic_report(pidff, effect);
+		pidff_set_envelope_report(pidff, &effect->u.periodic.envelope);
+		break;
+
+	case FF_RAMP:
+		//pidff_request_effect_upload(pidff,pidff->type_id[PID_RAMP]);
+		pidff_set_ramp_force_report(pidff, effect);
+		pidff_set_envelope_report(pidff, &effect->u.ramp.envelope);
+		break;
+
+	case FF_SPRING:
+		//pidff_request_effect_upload(pidff,pidff->type_id[PID_SPRING]);
+		pidff_set_condition_report(pidff, effect);
+		break;
+
+	case FF_FRICTION:
+		//pidff_request_effect_upload(pidff,pidff->type_id[PID_FRICTION]);
+		pidff_set_condition_report(pidff, effect);
+		break;
+
+	case FF_DAMPER:
+		//pidff_request_effect_upload(pidff,pidff->type_id[PID_DAMPER]);
+		pidff_set_condition_report(pidff, effect);
+		break;
+
+	case FF_INERTIA:
+		//pidff_request_effect_upload(pidff,pidff->type_id[PID_INERTIA]);
+		pidff_set_condition_report(pidff, effect);
+		break;
+
+	default:
+		hid_err(pidff->hid, "invalid type\n");
+	}
+}
+
 /*
  * Play the effect with effect id @effect_id for @value times
  */
@@ -516,6 +614,14 @@ static int pidff_playback(struct input_dev *dev, int effect_id, int value)
 {
 	struct pidff_device *pidff = dev->ff->private;
 
+	if (value > 0) {
+		if (pidff->states[effect_id].flags != FF_EFFECT_PLAYING) {
+			pidff_force_update_effect(pidff, &pidff->states[effect_id].effect);
+		}
+		pidff->states[effect_id].flags = FF_EFFECT_PLAYING;
+	} else {
+		pidff->states[effect_id].flags = FF_EFFECT_STOPPED;
+	}
 	pidff_playback_pid(pidff, pidff->pid_id[effect_id], value);
 
 	return 0;
@@ -557,6 +663,7 @@ static int pidff_upload_effect(struct input_dev *dev, struct ff_effect *effect,
 			       struct ff_effect *old)
 {
 	struct pidff_device *pidff = dev->ff->private;
+	struct pidff_effect_state *state = &pidff->states[effect->id];
 	int type_id;
 	int error;
 
@@ -565,6 +672,7 @@ static int pidff_upload_effect(struct input_dev *dev, struct ff_effect *effect,
 		pidff->block_load[PID_EFFECT_BLOCK_INDEX].value[0] =
 			pidff->pid_id[effect->id];
 	}
+	state->effect = *effect;
 
 	switch (effect->type) {
 	case FF_CONSTANT:
