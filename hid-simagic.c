@@ -16,7 +16,9 @@ static const struct hid_device_id simagic_devices[] = {
 };
 MODULE_DEVICE_TABLE(hid, simagic_devices);
 
-static int simagic_probe(struct hid_device *hdev, const struct hid_device_id *id) {
+static int simagic_probe(struct hid_device *hdev, 
+				const struct hid_device_id *id) 
+{
 	int ret;
 	ret = hid_parse(hdev);
 	if (ret) {
@@ -42,7 +44,8 @@ err:
 }
 
 static int simagic_input_configured(struct hid_device *hdev,
-				struct hid_input *hidinput) {
+				struct hid_input *hidinput) 
+{
 	struct input_dev *input = hidinput->input;
 	input_set_abs_params(input, ABS_X, 
 		input->absinfo[ABS_X].minimum, input->absinfo[ABS_X].maximum, 0, 0);
