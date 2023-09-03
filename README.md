@@ -2,7 +2,7 @@
 
 Linux module driver for Simagic driving wheels.
 
-Simagic wheels is basically DirectInput wheels without 0xa7 descriptor (effect delay). Current in-tree driver does not take into account the lack of descriptor and fully rejects FFB support.
+Simagic wheels (with [firmware](#known-issues-with-the-firmware) up to v159) are basically DirectInput wheels without 0xa7 descriptor (effect delay). Current in-tree driver does not take into account the lack of descriptor and fully rejects FFB support.
 In that repository - copy of pidff driver from 6.3 kernel with some patches (removed 0xa7 support), and some changes around infinite length effects (like that https://github.com/berarma/ffbtools/issues/26)
 
 And that's basically it
@@ -12,6 +12,7 @@ And that's basically it
 1. Simagic Alpha Mini
 2. Simagic Alpha
 3. Simagic Alpha U
+4. Simagic M10
 
 Just because they have identical VendorID/ProductID (`0x0483` `0x0522`)
 
