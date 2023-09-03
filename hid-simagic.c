@@ -11,7 +11,7 @@
 #include "hid-simagic.h"
 
 static const struct hid_device_id simagic_devices[] = {
-	{ HID_USB_DEVICE(USB_VENDOR_ID_SIMAGIC, USB_DEVICE_ID_SIMAGIC_ALPHA) },
+	{ HID_USB_DEVICE(USB_VENDOR_ID_SIMAGIC, USB_DEVICE_ID_SIMAGIC_WHEEL) },
 	{ }
 };
 MODULE_DEVICE_TABLE(hid, simagic_devices);
