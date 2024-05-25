@@ -383,7 +383,17 @@ static __u8 simagic_pid_rdesc[] = {
 	0xC0,              //   End Collection
 	0x09, 0x73,        //   Usage (0x73)
 	0xA1, 0x02,        //   Collection (Logical)
-	0x85, 0x05,        //     Report ID (5)
+
+	0x85, 0x05,        //     Report ID (1)
+
+	0x09, 0x9D,		   //     Usage (Vendor something)
+	0x15, 0x01,        // 	  Logical Minimum (1)
+	0x25, 0x01,        // 	  Logical Maximum (1)	
+	0x75, 0x01,        //     Report Size (1)
+	0x95, 0x01,        //     Report Count (1)
+	0x91, 0x03,        //     Output (Constant, Variable)
+
+
 	0x09, 0x22,        //     Usage (0x22)
 	0x15, 0x01,        //     Logical Minimum (1)
 	0x25, 0x28,        //     Logical Maximum (40)
