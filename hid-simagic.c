@@ -45,6 +45,59 @@ err:
 
 
 static __u8 simagic_pid_rdesc[] = {
+	0x05, 0x01,        // Usage Page (Generic Desktop Ctrls)
+	0x15, 0x00,        // Logical Minimum (0)
+	0x09, 0x04,        // Usage (Joystick)
+	0xA1, 0x01,        // Collection (Application)
+	0x05, 0x01,        //   Usage Page (Generic Desktop Ctrls)
+	0x85, 0x01,        //   Report ID (1)
+	0x09, 0x01,        //   Usage (Pointer)
+	0x15, 0x00,        //   Logical Minimum (0)
+	0x27, 0xFF, 0xFF, 0x00, 0x00,  //   Logical Maximum (65534)
+	0x75, 0x10,        //   Report Size (16)
+	0x95, 0x01,        //   Report Count (1)
+	0xA1, 0x00,        //   Collection (Physical)
+	0x09, 0x30,        //     Usage (X)
+	0x81, 0x02,        //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+	0x26, 0xFF, 0x0F,  //     Logical Maximum (4095)
+	0x75, 0x0C,        //     Report Size (12)
+	0x09, 0x31,        //     Usage (Y)
+	0x81, 0x02,        //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+	0x09, 0x32,        //     Usage (Z)
+	0x81, 0x02,        //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+	0x09, 0x33,        //     Usage (Rx)
+	0x81, 0x02,        //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+	0x09, 0x34,        //     Usage (Ry)
+	0x81, 0x02,        //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+	0x09, 0x35,        //     Usage (Rz)
+	0x81, 0x02,        //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+	0x09, 0x36,        //     Usage (Slider)
+	0x81, 0x02,        //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+	0xC0,              //   End Collection
+	0x15, 0x00,        //   Logical Minimum (0)
+	0x25, 0x03,        //   Logical Maximum (3)
+	0x35, 0x00,        //   Physical Minimum (0)
+	0x46, 0x0E, 0x01,  //   Physical Maximum (270)
+	0x65, 0x14,        //   Unit (System: English Rotation, Length: Centimeter)
+	0x75, 0x04,        //   Report Size (4)
+	0x95, 0x01,        //   Report Count (1)
+	0x09, 0x39,        //   Usage (Hat switch)
+	0x81, 0x02,        //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+	0x05, 0x09,        //   Usage Page (Button)
+	0x15, 0x00,        //   Logical Minimum (0)
+	0x25, 0x01,        //   Logical Maximum (1)
+	0x55, 0x00,        //   Unit Exponent (0)
+	0x65, 0x00,        //   Unit (None)
+	0x19, 0x01,        //   Usage Minimum (0x01)
+	0x29, 0x74,        //   Usage Maximum (0x74)
+	0x75, 0x01,        //   Report Size (1)
+	0x95, 0x74,        //   Report Count (116)
+	0x81, 0x02,        //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+	0x06, 0x00, 0xFF,  //   Usage Page (Vendor Defined 0xFF00)
+	0x09, 0x01,        //   Usage (0x01)
+	0x75, 0x08,        //   Report Size (8)
+	0x95, 0x0C,        //   Report Count (12)
+	0x81, 0x02,        //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
 	0x05, 0x0F,        //   Usage Page (PID Page)
 	0x09, 0x92,        //   Usage (0x92)
 	0xA1, 0x02,        //   Collection (Logical)
@@ -613,6 +666,40 @@ static __u8 simagic_pid_rdesc[] = {
 	0x95, 0x01,        //     Report Count (1)
 	0xB1, 0x03,        //     Feature (Const,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
 	0xC0,              //   End Collection
+	0x09, 0x02,        //   Usage (0x02)
+	0x75, 0x08,        //   Report Size (8)
+	0x95, 0x14,        //   Report Count (20)
+	0x91, 0x02,        //   Output (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
+	0x06, 0x00, 0xFF,  //   Usage Page (Vendor Defined 0xFF00)
+	0x09, 0x01,        //   Usage (0x01)
+	0xA1, 0x02,        //   Collection (Logical)
+	0x15, 0x00,        //     Logical Minimum (0)
+	0x26, 0xFF, 0x00,  //     Logical Maximum (255)
+	0x75, 0x08,        //     Report Size (8)
+	0x85, 0x80,        //     Report ID (-128)
+	0x95, 0x3F,        //     Report Count (63)
+	0x09, 0x01,        //     Usage (0x01)
+	0xB1, 0x02,        //     Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
+	0x85, 0x81,        //     Report ID (-127)
+	0x95, 0x3F,        //     Report Count (63)
+	0x09, 0x01,        //     Usage (0x01)
+	0xB1, 0x02,        //     Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
+	0x85, 0x82,        //     Report ID (-126)
+	0x95, 0x3F,        //     Report Count (63)
+	0x09, 0x01,        //     Usage (0x01)
+	0xB1, 0x02,        //     Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
+	0x85, 0x90,        //     Report ID (-112)
+	0x95, 0xF0,        //     Report Count (-16)
+	0x09, 0x01,        //     Usage (0x01)
+	0xB1, 0x02,        //     Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
+	0x85, 0x91,        //     Report ID (-111)
+	0x95, 0x3D,        //     Report Count (61)
+	0x09, 0x01,        //     Usage (0x01)
+	0xB1, 0x02,        //     Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
+	0xC0,              //   End Collection
+	0xC0,              // End Collection
+
+	// 1406 bytes
 };
 
 
@@ -625,28 +712,10 @@ static u8 *simagic_report_fixup(struct hid_device *hdev, __u8 *rdesc,
 
 	// If descriptor is smol
 	if (*rsize < sizeof(simagic_pid_rdesc)) {
-		new_rdesc = devm_kzalloc(&hdev->dev, new_size, GFP_KERNEL);
-		if (new_rdesc == NULL)
-			return rdesc;
-
 		dev_info(&hdev->dev,
 			 "fixing Simagic Alpha report descriptor...\n");
-
-		/* Copy whole old descriptor without last 0xC0 (End Collection) */
-		memcpy(new_rdesc, rdesc, *rsize-1);
-
-		/* add the PID descriptor */
-		memcpy(new_rdesc + *rsize - 1, simagic_pid_rdesc, sizeof(simagic_pid_rdesc));
-		new_rdesc[new_size-1] = 0xC0; // Paste last End Collection
-
-		*rsize = new_size;
-		rdesc = new_rdesc;
-
-		/* Debug descriptor */
-		printk(KERN_DEBUG, "Patched Simagic descriptor: ");
-		for (size_t i = 0; i < new_size; ++i) {
-        	printk(KERN_CONT "%02x", rdesc[i]);
-    	}
+		rdesc = simagic_pid_rdesc;
+		*rsize = sizeof(simagic_pid_rdesc);
 	}
 	return rdesc;
 }
