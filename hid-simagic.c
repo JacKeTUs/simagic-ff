@@ -641,6 +641,12 @@ static u8 *simagic_report_fixup(struct hid_device *hdev, __u8 *rdesc,
 
 		*rsize = new_size;
 		rdesc = new_rdesc;
+
+		/* Debug descriptor */
+		printk(KERN_DEBUG, "Patched Simagic descriptor: ");
+		for (size_t i = 0; i < new_size; ++i) {
+        	printk(KERN_CONT "%02x", rdesc[i]);
+    	}
 	}
 	return rdesc;
 }
