@@ -62,7 +62,11 @@ AlphaManager works pretty good, but it recognizes only "old" bases (made before 
 
 That soft uses hidraw to set up a base. You need to create `udev` rule for allow access to hidraw device:
 ```
-echo 'KERNEL=="hidraw*", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="0522", MODE="0660", TAG+="uaccess"' | sudo tee /etc/udev/rules.d/11-simagic.rules
+# Alpha wheelbases
+echo 'KERNEL=="hidraw*", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="0522", MODE="0666", TAG+="uaccess"' | sudo tee -a /etc/udev/rules.d/11-simagic.rules
+
+# Simagic wheels (including GT Neo, GT Neo X)
+echo 'KERNEL=="hidraw*", ATTRS{idVendor}=="3670", MODE="0666", TAG+="uaccess"' | sudo tee -a /etc/udev/rules.d/11-simagic.rules
 
 udevadm control --reload-rules && udevadm trigger
 ```
