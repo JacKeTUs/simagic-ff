@@ -1,3 +1,7 @@
+# IMPORTANT UPDATE
+
+## Fixes introduced in this repo are upstreamed into kernels after 6.12.24, 6.13.12, 6.14.3, 6.15 and so on. If you're using Alpha (pre v159) or M10, this driver is no longer needed - wheelbase will just work ootb. If that's not the case, please, open new issue here or in https://github.com/JacKeTUs/universal-pidff.
+
 # Force feedback support for Simagic steering wheels
 
 Linux module driver for Simagic driving wheels.
