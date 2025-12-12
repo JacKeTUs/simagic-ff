@@ -34,7 +34,10 @@ struct smff_device {
 };
 
 static const struct hid_device_id simagic_devices[] = {
-	{ HID_USB_DEVICE(USB_VENDOR_ID_SIMAGIC, USB_DEVICE_ID_SIMAGIC_WHEEL) },
+	{ HID_USB_DEVICE(USB_VENDOR_ID_SIMAGIC_ALPHA, USB_DEVICE_ID_SIMAGIC_ALPHA) },
+	{ HID_USB_DEVICE(USB_VENDOR_ID_SIMAGIC, USB_DEVICE_ID_SIMAGIC_EVO) },
+	{ HID_USB_DEVICE(USB_VENDOR_ID_SIMAGIC, USB_DEVICE_ID_SIMAGIC_EVO_1) },
+	{ HID_USB_DEVICE(USB_VENDOR_ID_SIMAGIC, USB_DEVICE_ID_SIMAGIC_EVO_2) },
 	{ }
 };
 
@@ -309,7 +312,6 @@ static int simagic_ff_initffb(struct hid_device *hid) {
 
 static int simagic_probe(struct hid_device *hdev, const struct hid_device_id *id) {
 	int ret;
-	//hdev->ff_init = hid_pidff_init_simagic;
 	ret = hid_parse(hdev);
 	if (ret) {
 		hid_err(hdev, "parse failed\n");
