@@ -307,6 +307,7 @@ static int simagic_ff_initffb(struct hid_device *hid) {
 	hid_info(dev, "Force feedback for Simagic wheel\n");
 	return 0;
   fail:
+	kfree(smff);
 	return error;
 }
 
