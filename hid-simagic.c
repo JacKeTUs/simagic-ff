@@ -9,8 +9,7 @@
 #include <linux/hid.h>
 #include <linux/module.h>
 #include "hid-simagic.h"
-
-#define	PID_EFFECTS_MAX		64
+#include "hid-simagic-sysfs.h"
 
 #define SM_SET_EFFECT_REPORT 0x01
 #define SM_SET_ENVELOPE_REPORT 0x12
@@ -23,15 +22,12 @@
 
 #define SM_EFFECT_OPERATION_REPORT 0x0a
 
+//#define SM_SET_WHEEL_SETTINGS1_REPORT 0x80
+#define SM_GET_STATUS1_REPORT 0x81
+
 #define SM_CONSTANT 0x01
 #define SM_DAMPER 0x05
 #define SM_SPRING 0x06
-
-
-struct smff_device {
-	struct hid_device *hid;
-	int pid_id[PID_EFFECTS_MAX];
-};
 
 static const struct hid_device_id simagic_devices[] = {
 	{ HID_USB_DEVICE(USB_VENDOR_ID_SIMAGIC_ALPHA, USB_DEVICE_ID_SIMAGIC_ALPHA) },
@@ -44,6 +40,25 @@ static const struct hid_device_id simagic_devices[] = {
 
 MODULE_DEVICE_TABLE(hid, simagic_devices);
 
+struct smff_device* get_smff_from_hid(struct hid_device *hid) {
+	struct hid_input *hidinput = list_entry(hid->inputs.next,
+						struct hid_input, list);
+	struct input_dev *dev;
+	struct ff_device *ff;
+
+	if (hidinput == NULL)
+		return NULL;
+	
+	dev = hidinput->input;
+	if (dev == NULL)
+		return NULL;
+	
+	ff = dev->ff;
+	if (ff == NULL)
+		return NULL;
+
+	return ff->private;
+}
 
 /*
  * Scale an unsigned value with range 0..max for the given field
@@ -263,6 +278,23 @@ static void sm_set_autocenter(struct input_dev *dev, u16 magnitude) {
 	hid_info(dev, "Setting autocenter: %d\n", magnitude);
 }
 
+bool sm_read_status1(struct hid_device *hid, struct smff_status1_report *out_status) {
+	struct smff_device *smff = get_smff_from_hid(hid);
+	int ret;
+
+	if (!smff || !out_status)
+		return false;
+
+	ret = hid_hw_raw_request(hid, SM_GET_STATUS1_REPORT, (u8*)out_status,
+				sizeof(*out_status), HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
+	if (ret < 0) {
+		hid_err(hid, "Failed to retrieve wheel settings: %d\n", ret);
+		return false;
+	}
+
+	return true;
+}
+
 static int simagic_ff_initffb(struct hid_device *hid) {
 	struct hid_input *hidinput = list_entry(hid->inputs.next,
 						struct hid_input, list);
@@ -303,8 +335,10 @@ static int simagic_ff_initffb(struct hid_device *hid) {
 	ff->set_gain = sm_set_gain;
 	ff->set_autocenter = sm_set_autocenter;
 
+	simagic_ff_initsysfs(hid);
 
 	hid_info(dev, "Force feedback for Simagic wheel\n");
+
 	return 0;
   fail:
 	kfree(smff);
@@ -335,6 +369,11 @@ err:
 	return ret;
 }
 
+static void simagic_remove(struct hid_device *hdev) {
+	simagic_ff_removesysfs(hdev);
+	hid_hw_stop(hdev);
+}
+
 static int simagic_input_configured(struct hid_device *hdev,
 				struct hid_input *hidinput) 
 {
@@ -348,6 +387,7 @@ static struct hid_driver simagic_ff = {
 	.name = "simagic-ff",
 	.id_table = simagic_devices,
 	.probe = simagic_probe,
+	.remove = simagic_remove,
 	.input_configured = simagic_input_configured,
 };
 module_hid_driver(simagic_ff);
