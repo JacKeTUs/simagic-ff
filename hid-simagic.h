@@ -15,11 +15,13 @@ struct smff_status1_report {
 	u8 report_id;
 	u8 unknown_offset_01;
 	__le16 max_angle;
-	u8 ff_strength_percentage;
-	u8 unknown_offset_05[2];
+	__le16 ff_strength;
+	u8 unknown_offset_06;
 	u8 wheel_rotation_speed;
-	u8 unknown_offset_08[3];
-	u8 mechanical_friction_percentage;
+	u8 mechanical_centering;
+	u8 mechanical_damper;
+	u8 center_damper;
+	u8 mechanical_friction;
 	u8 game_centering;
 	u8 game_inertia;
 	u8 game_damper;
@@ -38,6 +40,23 @@ struct smff_status1_report {
 	u8 unknown_offset_56[7];
 };
 
+struct smff_settings1_report {
+	u8 report_id;             // always 0x80
+	u8 unknown_offset_01;     // always 0x01
+	__le16 max_angle;         //   90 .. 2520
+	__le16 ff_strength;       // -100 .. 100
+	u8 unknown_offset_06;     // always 0x02?
+	u8 wheel_rotation_speed;
+	u8 mechanical_centering;
+	u8 mechanical_damper;
+	u8 center_damper;
+	u8 mechanical_friction;
+	u8 game_centering;
+	u8 game_inertia;
+	u8 game_damper;
+	u8 game_friction;
+};
+
 struct smff_device {
 	struct hid_device *hid;
 	int pid_id[PID_EFFECTS_MAX];
@@ -47,6 +66,8 @@ struct smff_device {
 
 struct smff_device* get_smff_from_hid(struct hid_device *hid);
 bool sm_read_status1(struct hid_device *hid, struct smff_status1_report *out_status);
+bool sm_read_settings1(struct hid_device *hid, struct smff_settings1_report *out_settings);
+bool sm_write_settings1(struct hid_device *hid, struct smff_settings1_report *in_settings);
 
 int hid_pidff_init_simagic(struct hid_device *hdev);
 

@@ -11,6 +11,8 @@
 #include "hid-simagic.h"
 #include "hid-simagic-sysfs.h"
 
+#define SM_HID_MAX_TMPBUF_SIZE 64
+
 #define SM_SET_EFFECT_REPORT 0x01
 #define SM_SET_ENVELOPE_REPORT 0x12
 
@@ -22,7 +24,7 @@
 
 #define SM_EFFECT_OPERATION_REPORT 0x0a
 
-//#define SM_SET_WHEEL_SETTINGS1_REPORT 0x80
+#define SM_SET_WHEEL_SETTINGS1_REPORT 0x80
 #define SM_GET_STATUS1_REPORT 0x81
 
 #define SM_CONSTANT 0x01
@@ -92,6 +94,58 @@ static int get_block_id(struct ff_effect *effect) {
 		break;
 	}
 	return sm_pid_id;
+}
+
+static int sm_hid_get_report(struct hid_device *hid, u8 report, u8 *buffer, size_t len,
+	enum hid_report_type rtype) {
+
+	struct smff_device *smff;
+	int ret;
+	u8* tmp_buf;
+
+	if (!hid || len > SM_HID_MAX_TMPBUF_SIZE)
+		return -EINVAL;
+	
+	smff = get_smff_from_hid(hid);
+
+	if (!smff)
+		return -EINVAL;
+
+	tmp_buf = kzalloc(len, GFP_KERNEL);
+	ret = hid_hw_raw_request(hid, report, tmp_buf, len, rtype, HID_REQ_GET_REPORT);
+	if (ret >= 0) {
+		hid_hw_wait(hid);
+		memcpy(buffer, tmp_buf, len);
+	}
+	kfree(tmp_buf);
+
+	return ret;
+}
+
+static int sm_hid_set_report(struct hid_device *hid, u8 report, u8 *buffer, size_t len,
+	enum hid_report_type rtype) {
+
+	struct smff_device *smff;
+	int ret;
+	u8* tmp_buf;
+
+	if (!hid || len > SM_HID_MAX_TMPBUF_SIZE)
+		return -EINVAL;
+	
+	smff = get_smff_from_hid(hid);
+
+	if (!smff)
+		return -EINVAL;
+
+	tmp_buf = kzalloc(len, GFP_KERNEL);
+	memcpy(tmp_buf, buffer, len);
+	ret = hid_hw_raw_request(hid, report, tmp_buf, len, rtype, HID_REQ_SET_REPORT);
+	if (ret >= 0) {
+		hid_hw_wait(hid);
+	}
+	kfree(tmp_buf);
+
+	return ret;
 }
 
 static int sm_set_constant_report(struct input_dev *dev, struct ff_effect *effect)
@@ -279,16 +333,88 @@ static void sm_set_autocenter(struct input_dev *dev, u16 magnitude) {
 }
 
 bool sm_read_status1(struct hid_device *hid, struct smff_status1_report *out_status) {
-	struct smff_device *smff = get_smff_from_hid(hid);
 	int ret;
 
-	if (!smff || !out_status)
+	if (!out_status)
 		return false;
+	
+	ret = sm_hid_get_report(hid, SM_GET_STATUS1_REPORT, (u8*)out_status,
+				sizeof(*out_status), HID_FEATURE_REPORT);
 
-	ret = hid_hw_raw_request(hid, SM_GET_STATUS1_REPORT, (u8*)out_status,
-				sizeof(*out_status), HID_FEATURE_REPORT, HID_REQ_GET_REPORT);
 	if (ret < 0) {
 		hid_err(hid, "Failed to retrieve wheel settings: %d\n", ret);
+		return false;
+	}
+
+	return true;
+}
+
+bool sm_read_settings1(struct hid_device *hid, struct smff_settings1_report *out_settings)
+{
+	struct smff_status1_report status1;
+	if (!out_settings || !sm_read_status1(hid, &status1))
+		return false;
+	
+	out_settings->report_id            = SM_SET_WHEEL_SETTINGS1_REPORT;
+	out_settings->unknown_offset_01    = 0x01;
+	out_settings->max_angle            = status1.max_angle;
+	out_settings->ff_strength          = status1.ff_strength;
+	out_settings->unknown_offset_06    = status1.unknown_offset_06;
+	out_settings->wheel_rotation_speed = status1.wheel_rotation_speed;
+	out_settings->mechanical_centering = status1.mechanical_centering;
+	out_settings->mechanical_damper    = status1.mechanical_damper;
+	out_settings->center_damper        = status1.center_damper;
+	out_settings->mechanical_friction  = status1.mechanical_friction;
+	out_settings->game_centering       = status1.game_centering;
+	out_settings->game_inertia         = status1.game_inertia;
+	out_settings->game_damper          = status1.game_damper;
+	out_settings->game_friction        = status1.game_friction;
+
+	return true;
+}
+
+static void sm_sanitize_settings1_report(struct smff_settings1_report* settings) {
+	if (!settings)
+		return;
+	
+	settings->report_id            = SM_SET_WHEEL_SETTINGS1_REPORT;
+	settings->unknown_offset_01    = 0x01;
+	settings->max_angle            = cpu_to_le16((u16)clamp_t(s16, (s16)le16_to_cpu(settings->max_angle), 90, 2520));
+	settings->ff_strength          = cpu_to_le16((u16)clamp_t(s16, (s16)le16_to_cpu(settings->ff_strength), -100, 100));
+	settings->unknown_offset_06    = 0x02;
+	settings->wheel_rotation_speed = min_t(u8, settings->wheel_rotation_speed, 100);
+	settings->mechanical_centering = min_t(u8, settings->mechanical_centering, 100);
+	settings->mechanical_damper    = min_t(u8, settings->mechanical_damper, 100);
+	settings->center_damper        = min_t(u8, settings->center_damper, 100);
+	settings->mechanical_friction  = min_t(u8, settings->mechanical_friction, 100);
+	settings->game_centering       = min_t(u8, settings->game_centering, 100);
+	settings->game_inertia         = min_t(u8, settings->game_inertia, 100);
+	settings->game_damper          = min_t(u8, settings->game_damper, 100);
+	settings->game_friction        = min_t(u8, settings->game_friction, 100);
+}
+
+bool sm_write_settings1(struct hid_device *hid, struct smff_settings1_report *in_settings)
+{
+	struct smff_device *smff = get_smff_from_hid(hid);
+	u8 raw_buffer[64];
+	struct smff_settings1_report* report_buffer = (struct smff_settings1_report*)raw_buffer;
+	int ret;
+
+	static_assert(sizeof(*in_settings) <= sizeof(raw_buffer));
+
+	if (!smff || !in_settings )
+		return false;
+	
+	memset(raw_buffer, 0, sizeof(raw_buffer));
+	memcpy(raw_buffer, in_settings, sizeof(*in_settings));
+
+	sm_sanitize_settings1_report(report_buffer);
+
+	ret = sm_hid_set_report(hid, SM_SET_WHEEL_SETTINGS1_REPORT, raw_buffer,
+		sizeof(raw_buffer), HID_FEATURE_REPORT);
+	
+	if (ret < 0) {
+		hid_err(hid, "Failed to set wheel settings: %d\n", ret);
 		return false;
 	}
 
