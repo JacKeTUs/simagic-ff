@@ -487,10 +487,10 @@ static void sm_sanitize_settings1_report(struct smff_settings1_report* settings)
 	settings->mechanical_damper    = min_t(u8, settings->mechanical_damper, 100);
 	settings->center_damper        = min_t(u8, settings->center_damper, 100);
 	settings->mechanical_friction  = min_t(u8, settings->mechanical_friction, 100);
-	settings->game_centering       = min_t(u8, settings->game_centering, 100);
-	settings->game_inertia         = min_t(u8, settings->game_inertia, 100);
-	settings->game_damper          = min_t(u8, settings->game_damper, 100);
-	settings->game_friction        = min_t(u8, settings->game_friction, 100);
+	settings->game_centering       = min_t(u8, settings->game_centering, 200);
+	settings->game_inertia         = min_t(u8, settings->game_inertia, 200);
+	settings->game_damper          = min_t(u8, settings->game_damper, 200);
+	settings->game_friction        = min_t(u8, settings->game_friction, 200);
 }
 
 bool sm_write_settings1(struct hid_device *hid, struct smff_settings1_report *in_settings)
