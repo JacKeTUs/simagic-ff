@@ -70,6 +70,21 @@ struct smff_device* get_smff_from_hid(struct hid_device *hid) {
 	return ff->private;
 }
 
+static bool is_alpha_evo(struct hid_device *hid) {
+	if (!hid)
+		return false;
+
+	switch(le16_to_cpu(hid->product))
+	{
+		case USB_DEVICE_ID_SIMAGIC_EVO:
+		case USB_DEVICE_ID_SIMAGIC_EVO_1:
+		case USB_DEVICE_ID_SIMAGIC_EVO_2:
+			return true;
+	}
+
+	return false;
+}
+
 /*
  * Scale an unsigned value with range 0..max for the given field
  */
@@ -464,7 +479,7 @@ static void sm_sanitize_settings1_report(struct smff_settings1_report* settings)
 	
 	settings->report_id            = SM_SET_WHEEL_SETTINGS1_REPORT;
 	settings->unknown_offset_01    = 0x01;
-	settings->max_angle            = cpu_to_le16((u16)clamp_t(s16, (s16)le16_to_cpu(settings->max_angle), 90, 2520));
+	settings->max_angle            = cpu_to_le16(clamp_t(u16, le16_to_cpu(settings->max_angle), 90, 2520));
 	settings->ff_strength          = cpu_to_le16((u16)clamp_t(s16, (s16)le16_to_cpu(settings->ff_strength), -100, 100));
 	settings->unknown_offset_06    = 0x02;
 	settings->wheel_rotation_speed = min_t(u8, settings->wheel_rotation_speed, 100);
@@ -506,6 +521,75 @@ bool sm_write_settings1(struct hid_device *hid, struct smff_settings1_report *in
 	return true;
 }
 
+bool sm_read_settings2(struct hid_device *hid, struct smff_settings2_report *out_settings)
+{
+	struct smff_status1_report status1;
+	if (!out_settings || !sm_read_status1(hid, &status1))
+		return false;
+	
+	out_settings->report_id            = SM_SET_WHEEL_SETTINGS1_REPORT;
+	out_settings->unknown_offset_01    = 0x02;
+	out_settings->angle_lock           = status1.angle_lock;
+	out_settings->feedback_detail      = status1.feedback_detail;
+	out_settings->unknown_offset_06    = status1.unknown_offset_19;
+	out_settings->angle_lock_strength  = status1.angle_lock_strength;
+	out_settings->unknown_offset_08    = status1.unknown_offset_21;
+	out_settings->mechanical_inertia   = status1.mechanical_inertia;
+	out_settings->unknown_offset_10    = status1.unknown_offset_23;
+
+	return true;
+}
+
+static void sm_sanitize_settings2_report(struct hid_device *hid, struct smff_settings2_report* settings) {
+	struct smff_status1_report status1;
+
+	if (!settings)
+		return;
+
+	s16 max_angle = 2520;
+	if (sm_read_status1(hid, &status1)) {
+		max_angle = le16_to_cpu(status1.max_angle);
+		settings->unknown_offset_06 = status1.unknown_offset_19;
+		settings->unknown_offset_08 = status1.unknown_offset_21;
+		settings->unknown_offset_10 = status1.unknown_offset_23;
+	}
+	
+	settings->report_id            = SM_SET_WHEEL_SETTINGS1_REPORT;
+	settings->unknown_offset_01    = 0x02;
+	settings->angle_lock           = cpu_to_le16(clamp_t(u16, le16_to_cpu(settings->angle_lock), 90, max_angle));
+	settings->feedback_detail      = min_t(u8, settings->feedback_detail, 100);
+	settings->angle_lock_strength  = min_t(u8, settings->angle_lock_strength, 2);
+	settings->mechanical_inertia   = min_t(u8, settings->mechanical_inertia, 100);
+}
+
+bool sm_write_settings2(struct hid_device *hid, struct smff_settings2_report *in_settings)
+{
+	struct smff_device *smff = get_smff_from_hid(hid);
+	u8 raw_buffer[64];
+	struct smff_settings2_report* report_buffer = (struct smff_settings2_report*)raw_buffer;
+	int ret;
+
+	static_assert(sizeof(*in_settings) <= sizeof(raw_buffer));
+
+	if (!smff || !in_settings )
+		return false;
+	
+	memset(raw_buffer, 0, sizeof(raw_buffer));
+	memcpy(raw_buffer, in_settings, sizeof(*in_settings));
+
+	sm_sanitize_settings2_report(hid, report_buffer);
+
+	ret = sm_hid_set_report(hid, SM_SET_WHEEL_SETTINGS1_REPORT, raw_buffer,
+		sizeof(raw_buffer), HID_FEATURE_REPORT);
+	
+	if (ret < 0) {
+		hid_err(hid, "Failed to set wheel settings: %d\n", ret);
+		return false;
+	}
+
+	return true;
+}
+
 static int simagic_ff_initffb(struct hid_device *hid) {
 	struct hid_input *hidinput = list_entry(hid->inputs.next,
 						struct hid_input, list);
@@ -519,6 +603,7 @@ static int simagic_ff_initffb(struct hid_device *hid) {
 	if (!smff)
 		return -ENOMEM;
 	smff->hid = hid;
+	smff->is_alpha_evo = is_alpha_evo(hid);
 	
 	// NOTE: it doesn't look like firmware actually supports periodic effects
 	// official driver uploads the basic effect, but not periodicity settings
