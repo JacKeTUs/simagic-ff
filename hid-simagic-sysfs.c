@@ -35,6 +35,16 @@ static ssize_t simagic_attribute_settings2_store(
 	struct device_attribute *attr,
 	const char *buf, size_t count);
 
+static ssize_t simagic_attribute_settings3_store(
+	struct device *dev,
+	struct device_attribute *attr,
+	const char *buf, size_t count);
+
+static ssize_t simagic_attribute_settings4_store(
+	struct device *dev,
+	struct device_attribute *attr,
+	const char *buf, size_t count);
+
 #define SM_SYSFS_ATTR_RO(name, show) \
 	static DEVICE_ATTR(name, SIMAGIC_SYSFS_PERMISSION_RO, show, NULL);
 
@@ -56,9 +66,12 @@ SM_SYSFS_ATTR_RW(angle_lock, simagic_attribute_status1_show, simagic_attribute_s
 SM_SYSFS_ATTR_RW(feedback_detail, simagic_attribute_status1_show, simagic_attribute_settings2_store);
 SM_SYSFS_ATTR_RW(angle_lock_strength, simagic_attribute_status1_show, simagic_attribute_settings2_store);
 SM_SYSFS_ATTR_RW(mechanical_inertia, simagic_attribute_status1_show, simagic_attribute_settings2_store);
-SM_SYSFS_ATTR_RO(filter_level, simagic_attribute_status1_show);
-SM_SYSFS_ATTR_RO(slew_rate_control, simagic_attribute_status1_show);
+SM_SYSFS_ATTR_RW(filter_level, simagic_attribute_status1_show, simagic_attribute_settings4_store);
+SM_SYSFS_ATTR_RW(slew_rate_control, simagic_attribute_status1_show, simagic_attribute_settings4_store);
 SM_SYSFS_ATTR_RO(wheel_channel, simagic_attribute_status1_show);
+SM_SYSFS_ATTR_RW(ring_light_enabled, simagic_attribute_status1_show, simagic_attribute_settings3_store);
+//TODO: changing ring light brightness appears to need some other packet to refresh led brightness
+//SM_SYSFS_ATTR_RO(ring_light_brightness, simagic_attribute_status1_show, simagic_attribute_settings3_store);
 
 static ssize_t simagic_attribute_status1_show(
 	struct device *dev,
@@ -109,6 +122,8 @@ static ssize_t simagic_attribute_status1_show(
 		value = status1.slew_rate_control;
 	else if (attr == &dev_attr_wheel_channel)
 		value = status1.wheel_channel;
+	else if (attr == &dev_attr_ring_light_enabled)
+		value = (status1.ring_light & 0x80) ? 1 : 0;
 	else
 		return sysfs_emit(buf, "Unknown attribute\n");
 
@@ -191,6 +206,61 @@ static ssize_t simagic_attribute_settings2_store(
 	return count;
 }
 
+static ssize_t simagic_attribute_settings3_store(
+	struct device *dev,
+	struct device_attribute *attr,
+	const char *buf, size_t count)
+{
+	struct hid_device *hid = to_hid_device(dev);
+	struct smff_settings3_report settings3;
+	int value;
+
+	if (!simagic_sysfs_strtoint(&value, buf, count))
+		return count;
+	
+	if (!sm_read_settings3(hid, &settings3))
+		return count;
+	
+	if (attr == &dev_attr_ring_light_enabled) {
+		if (clamp(value, 0, 1))
+			settings3.ring_light |= 0x80;
+		else
+			settings3.ring_light &= 0x7f;
+	}
+	else
+		return count;
+	
+	sm_write_settings3(hid, &settings3);
+	
+	return count;
+}
+
+static ssize_t simagic_attribute_settings4_store(
+	struct device *dev,
+	struct device_attribute *attr,
+	const char *buf, size_t count)
+{
+	struct hid_device *hid = to_hid_device(dev);
+	struct smff_settings4_report settings4;
+	int value;
+
+	if (!simagic_sysfs_strtoint(&value, buf, count))
+		return count;
+	
+	if (!sm_read_settings4(hid, &settings4))
+		return count;
+	
+	if (attr == &dev_attr_filter_level)
+		settings4.filter_level = clamp(value, 0, 20);
+	else if (attr == &dev_attr_slew_rate_control)
+		settings4.slew_rate_control = clamp(value, 0, 100);
+	else
+		return count;
+	
+	sm_write_settings4(hid, &settings4);
+	
+	return count;
+}
 
 void simagic_ff_initsysfs(struct hid_device *hid) {
 	struct smff_device *smff = get_smff_from_hid(hid);
@@ -220,6 +290,7 @@ void simagic_ff_initsysfs(struct hid_device *hid) {
 	device_create_file(&hid->dev, &dev_attr_wheel_channel);
 	if (smff->is_alpha_evo) {
 		device_create_file(&hid->dev, &dev_attr_slew_rate_control);
+		device_create_file(&hid->dev, &dev_attr_ring_light_enabled);
 	}
 	smff->sysfs_created = true;
 }
@@ -234,6 +305,7 @@ void simagic_ff_removesysfs(struct hid_device *hid) {
 		return;
 
 	if (smff->is_alpha_evo) {
+		device_remove_file(&hid->dev, &dev_attr_ring_light_enabled);
 		device_remove_file(&hid->dev, &dev_attr_slew_rate_control);
 	}
 

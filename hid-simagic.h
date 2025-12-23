@@ -33,7 +33,8 @@ struct smff_status1_report {
 	u8 unknown_offset_21;
 	u8 mechanical_inertia;
 	u8 unknown_offset_23;
-	u8 unknown_offset_24[24];
+	u8 unknown_offset_24[23];
+	u8 ring_light;          // MSB = enabled/disabled, remaining bits brightness 0 .. 100
 	u8 unknown_offset_48;
 	u8 unknown_offset_49;
 	u8 filter_level;
@@ -110,6 +111,10 @@ bool sm_read_settings1(struct hid_device *hid, struct smff_settings1_report *out
 bool sm_write_settings1(struct hid_device *hid, struct smff_settings1_report *in_settings);
 bool sm_read_settings2(struct hid_device *hid, struct smff_settings2_report *out_settings);
 bool sm_write_settings2(struct hid_device *hid, struct smff_settings2_report *in_settings);
+bool sm_read_settings3(struct hid_device *hid, struct smff_settings3_report *out_settings);
+bool sm_write_settings3(struct hid_device *hid, struct smff_settings3_report *in_settings);
+bool sm_read_settings4(struct hid_device *hid, struct smff_settings4_report *out_settings);
+bool sm_write_settings4(struct hid_device *hid, struct smff_settings4_report *in_settings);
 
 int hid_pidff_init_simagic(struct hid_device *hdev);
 
