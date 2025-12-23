@@ -6,7 +6,7 @@
 #define SIMAGIC_SYSFS_PERMISSION_RO (S_IRUSR | S_IRGRP | S_IROTH)
 #define SIMAGIC_SYSFS_PERMISSION_RW (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH)
 
-static bool simagic_sysf_strtoint(int *out, const char* buf, size_t count)
+static bool simagic_sysfs_strtoint(int *out, const char* buf, size_t count)
 {
 	char tmp[32];
 
@@ -30,6 +30,11 @@ static ssize_t simagic_attribute_settings1_store(
 	struct device_attribute *attr,
 	const char *buf, size_t count);
 
+static ssize_t simagic_attribute_settings2_store(
+	struct device *dev,
+	struct device_attribute *attr,
+	const char *buf, size_t count);
+
 #define SM_SYSFS_ATTR_RO(name, show) \
 	static DEVICE_ATTR(name, SIMAGIC_SYSFS_PERMISSION_RO, show, NULL);
 
@@ -47,9 +52,10 @@ SM_SYSFS_ATTR_RW(game_centering, simagic_attribute_status1_show, simagic_attribu
 SM_SYSFS_ATTR_RW(game_inertia, simagic_attribute_status1_show, simagic_attribute_settings1_store);
 SM_SYSFS_ATTR_RW(game_damper, simagic_attribute_status1_show, simagic_attribute_settings1_store);
 SM_SYSFS_ATTR_RW(game_friction, simagic_attribute_status1_show, simagic_attribute_settings1_store);
-SM_SYSFS_ATTR_RO(angle_lock, simagic_attribute_status1_show);
-SM_SYSFS_ATTR_RO(feedback_detail, simagic_attribute_status1_show);
-SM_SYSFS_ATTR_RO(angle_lock_strength, simagic_attribute_status1_show);
+SM_SYSFS_ATTR_RW(angle_lock, simagic_attribute_status1_show, simagic_attribute_settings2_store);
+SM_SYSFS_ATTR_RW(feedback_detail, simagic_attribute_status1_show, simagic_attribute_settings2_store);
+SM_SYSFS_ATTR_RW(angle_lock_strength, simagic_attribute_status1_show, simagic_attribute_settings2_store);
+SM_SYSFS_ATTR_RW(mechanical_inertia, simagic_attribute_status1_show, simagic_attribute_settings2_store);
 SM_SYSFS_ATTR_RO(filter_level, simagic_attribute_status1_show);
 SM_SYSFS_ATTR_RO(slew_rate_control, simagic_attribute_status1_show);
 SM_SYSFS_ATTR_RO(wheel_channel, simagic_attribute_status1_show);
@@ -95,6 +101,8 @@ static ssize_t simagic_attribute_status1_show(
 		value = status1.feedback_detail;
 	else if (attr == &dev_attr_angle_lock_strength)
 		value = status1.angle_lock_strength;
+	else if (attr == &dev_attr_mechanical_inertia)
+		value = status1.mechanical_inertia;
 	else if (attr == &dev_attr_filter_level)
 		value = status1.filter_level;
 	else if (attr == &dev_attr_slew_rate_control)
@@ -116,7 +124,7 @@ static ssize_t simagic_attribute_settings1_store(
 	struct smff_settings1_report settings1;
 	int value;
 
-	if (!simagic_sysf_strtoint(&value, buf, count))
+	if (!simagic_sysfs_strtoint(&value, buf, count))
 		return count;
 	
 	if (!sm_read_settings1(hid, &settings1))
@@ -152,6 +160,38 @@ static ssize_t simagic_attribute_settings1_store(
 	return count;
 }
 
+static ssize_t simagic_attribute_settings2_store(
+	struct device *dev,
+	struct device_attribute *attr,
+	const char *buf, size_t count)
+{
+	struct hid_device *hid = to_hid_device(dev);
+	struct smff_settings2_report settings2;
+	int value;
+
+	if (!simagic_sysfs_strtoint(&value, buf, count))
+		return count;
+	
+	if (!sm_read_settings2(hid, &settings2))
+		return count;
+	
+	if (attr == &dev_attr_angle_lock)
+		settings2.angle_lock = cpu_to_le16((u16)value);
+	else if (attr == &dev_attr_feedback_detail)
+		settings2.feedback_detail = value;
+	else if (attr == &dev_attr_angle_lock_strength)
+		settings2.angle_lock_strength = value;
+	else if (attr == &dev_attr_mechanical_inertia)
+		settings2.mechanical_inertia = value;
+	else
+		return count;
+	
+	sm_write_settings2(hid, &settings2);
+	
+	return count;
+}
+
+
 void simagic_ff_initsysfs(struct hid_device *hid) {
 	struct smff_device *smff = get_smff_from_hid(hid);
 
@@ -175,9 +215,12 @@ void simagic_ff_initsysfs(struct hid_device *hid) {
 	device_create_file(&hid->dev, &dev_attr_angle_lock);
 	device_create_file(&hid->dev, &dev_attr_feedback_detail);
 	device_create_file(&hid->dev, &dev_attr_angle_lock_strength);
+	device_create_file(&hid->dev, &dev_attr_mechanical_inertia);
 	device_create_file(&hid->dev, &dev_attr_filter_level);
-	device_create_file(&hid->dev, &dev_attr_slew_rate_control);
 	device_create_file(&hid->dev, &dev_attr_wheel_channel);
+	if (smff->is_alpha_evo) {
+		device_create_file(&hid->dev, &dev_attr_slew_rate_control);
+	}
 	smff->sysfs_created = true;
 }
 
@@ -190,10 +233,14 @@ void simagic_ff_removesysfs(struct hid_device *hid) {
 	if (!smff->sysfs_created)
 		return;
 
+	if (smff->is_alpha_evo) {
+		device_remove_file(&hid->dev, &dev_attr_slew_rate_control);
+	}
+
 	device_remove_file(&hid->dev, &dev_attr_wheel_channel);
-	device_remove_file(&hid->dev, &dev_attr_slew_rate_control);
 	device_remove_file(&hid->dev, &dev_attr_filter_level);
 	device_remove_file(&hid->dev, &dev_attr_angle_lock_strength);
+	device_remove_file(&hid->dev, &dev_attr_mechanical_inertia);
 	device_remove_file(&hid->dev, &dev_attr_feedback_detail);
 	device_remove_file(&hid->dev, &dev_attr_angle_lock);
 	device_remove_file(&hid->dev, &dev_attr_game_friction);
