@@ -11,92 +11,6 @@
 
 #define	PID_EFFECTS_MAX		64
 
-struct smff_status1_report {
-	u8 report_id;
-	u8 unknown_offset_01;
-	__le16 max_angle;
-	__le16 ff_strength;
-	u8 unknown_offset_06;
-	u8 wheel_rotation_speed;
-	u8 mechanical_centering;
-	u8 mechanical_damper;
-	u8 center_damper;
-	u8 mechanical_friction;
-	u8 game_centering;
-	u8 game_inertia;
-	u8 game_damper;
-	u8 game_friction;
-	__le16 angle_lock;
-	u8 feedback_detail;
-	u8 unknown_offset_19;
-	u8 angle_lock_strength; // 0 = Soft, 1 = Normal, 2 = Firm 
-	u8 unknown_offset_21;
-	u8 mechanical_inertia;
-	u8 unknown_offset_23;
-	u8 unknown_offset_24[23];
-	u8 ring_light;          // MSB = enabled/disabled, remaining bits brightness 0 .. 100
-	u8 unknown_offset_48;
-	u8 unknown_offset_49;
-	u8 filter_level;
-	u8 unknown_offset_51;
-	u8 slew_rate_control;
-	u8 unknown_offset_53[2];
-	u8 wheel_channel;
-	u8 unknown_offset_55; // voltage?
-	u8 unknown_offset_56[7];
-};
-
-struct smff_settings1_report {
-	u8 report_id;             // always 0x80
-	u8 unknown_offset_01;     // always 0x01
-	__le16 max_angle;         //   90 .. 2520
-	__le16 ff_strength;       // -100 .. 100
-	u8 unknown_offset_06;     // always 0x02?
-	u8 wheel_rotation_speed;
-	u8 mechanical_centering;
-	u8 mechanical_damper;
-	u8 center_damper;
-	u8 mechanical_friction;
-	u8 game_centering;
-	u8 game_inertia;
-	u8 game_damper;
-	u8 game_friction;
-};
-
-struct smff_settings2_report {
-	u8 report_id;             // always 0x80
-	u8 unknown_offset_01;     // always 0x02
-	__le16 angle_lock;        // 90 .. 2520
-	u8 feedback_detail;
-	u8 unknown_offset_06;     // same as status1 offset 19
-	u8 angle_lock_strength;   // 0 .. 2
-	u8 unknown_offset_08;     // same as status1 offset 21
-	u8 mechanical_inertia;
-	u8 unknown_offset_10;     // same as status1 offset 23
-};
-
-struct smff_settings3_report {
-	u8 report_id;             // always 0x80
-	u8 unknown_offset_01;     // always 0x10
-	u8 unknown_offset_02;     // always 0x38
-	u8 unknown_offset_03;     // always 0x00 ???
-	u8 unknown_offset_04;     // always 0x01 ???
-	u8 ring_light;            // MSB = enabled/disabled, remaining bits brightness 0 .. 100
-};
-
-struct smff_settings4_report {
-	u8 report_id;             // always 0x80
-	u8 unknown_offset_01;     // always 0x10
-	u8 unknown_offset_02;     // always 0x39
-	u8 unknown_offset_03;     // always 0x00 ???
-	u8 unknown_offset_04;     // always 0x07 ???
-	u8 unknown_offset_05;     // same as status1 offset 48
-	u8 unknown_offset_06;     // same as status1 offset 49
-	u8 filter_level;
-	u8 unknown_offset_08;     // same as status1 offset 51
-	u8 slew_rate_control;
-};
-
 struct smff_device {
 	struct hid_device *hid;
 	int pid_id[PID_EFFECTS_MAX];
@@ -106,15 +20,10 @@ struct smff_device {
 };
 
 struct smff_device* get_smff_from_hid(struct hid_device *hid);
-bool sm_read_status1(struct hid_device *hid, struct smff_status1_report *out_status);
-bool sm_read_settings1(struct hid_device *hid, struct smff_settings1_report *out_settings);
-bool sm_write_settings1(struct hid_device *hid, struct smff_settings1_report *in_settings);
-bool sm_read_settings2(struct hid_device *hid, struct smff_settings2_report *out_settings);
-bool sm_write_settings2(struct hid_device *hid, struct smff_settings2_report *in_settings);
-bool sm_read_settings3(struct hid_device *hid, struct smff_settings3_report *out_settings);
-bool sm_write_settings3(struct hid_device *hid, struct smff_settings3_report *in_settings);
-bool sm_read_settings4(struct hid_device *hid, struct smff_settings4_report *out_settings);
-bool sm_write_settings4(struct hid_device *hid, struct smff_settings4_report *in_settings);
+int sm_hid_get_report(struct hid_device *hid, u8 report, u8 *buffer, size_t len,
+	enum hid_report_type rtype);
+int sm_hid_set_report(struct hid_device *hid, u8 report, u8 *buffer, size_t len,
+	enum hid_report_type rtype);
 
 int hid_pidff_init_simagic(struct hid_device *hdev);
 

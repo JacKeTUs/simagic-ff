@@ -2,6 +2,7 @@
 #include <linux/hid.h>
 #include "hid-simagic-sysfs.h"
 #include "hid-simagic.h"
+#include "hid-simagic-settings.h"
 
 #define SIMAGIC_SYSFS_PERMISSION_RO (S_IRUSR | S_IRGRP | S_IROTH)
 #define SIMAGIC_SYSFS_PERMISSION_RW (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH)
