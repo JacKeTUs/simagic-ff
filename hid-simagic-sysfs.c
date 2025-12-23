@@ -146,27 +146,27 @@ static ssize_t simagic_attribute_settings1_store(
 		return count;
 	
 	if (attr == &dev_attr_max_angle)
-		settings1.max_angle = cpu_to_le16((u16)value);
+		settings1.max_angle = cpu_to_le16((u16)clamp(value, 0, 2520));
 	else if (attr == &dev_attr_ff_strength)
-		settings1.ff_strength = cpu_to_le16((u16)value);
+		settings1.ff_strength = cpu_to_le16((u16)clamp(value, 0, 100));
 	else if (attr == &dev_attr_wheel_rotation_speed)
-		settings1.wheel_rotation_speed = value;
+		settings1.wheel_rotation_speed = clamp(value, 0, 100);
 	else if (attr == &dev_attr_mechanical_centering)
-		settings1.mechanical_centering = value;
+		settings1.mechanical_centering = clamp(value, 0, 100);
 	else if (attr == &dev_attr_mechanical_damper)
-		settings1.mechanical_damper = value;
+		settings1.mechanical_damper = clamp(value, 0, 100);
 	else if (attr == &dev_attr_center_damper)
-		settings1.center_damper = value;
+		settings1.center_damper = clamp(value, 0, 100);
 	else if (attr == &dev_attr_mechanical_friction)
-		settings1.mechanical_friction = value;
+		settings1.mechanical_friction = clamp(value, 0, 100);
 	else if (attr == &dev_attr_game_centering)
-		settings1.game_centering = value;
+		settings1.game_centering = clamp(value, 0, 200);
 	else if (attr == &dev_attr_game_inertia)
-		settings1.game_inertia = value;
+		settings1.game_inertia = clamp(value, 0, 200);
 	else if (attr == &dev_attr_game_damper)
-		settings1.game_damper = value;
+		settings1.game_damper = clamp(value, 0, 200);
 	else if (attr == &dev_attr_game_friction)
-		settings1.game_friction = value;
+		settings1.game_friction = clamp(value, 0, 200);
 	else
 		return count;
 	
@@ -191,13 +191,13 @@ static ssize_t simagic_attribute_settings2_store(
 		return count;
 	
 	if (attr == &dev_attr_angle_lock)
-		settings2.angle_lock = cpu_to_le16((u16)value);
+		settings2.angle_lock = cpu_to_le16((u16)clamp(value, 0, 2520));
 	else if (attr == &dev_attr_feedback_detail)
-		settings2.feedback_detail = value;
+		settings2.feedback_detail = clamp(value, 0, 100);
 	else if (attr == &dev_attr_angle_lock_strength)
-		settings2.angle_lock_strength = value;
+		settings2.angle_lock_strength = clamp(value, 0, 2);
 	else if (attr == &dev_attr_mechanical_inertia)
-		settings2.mechanical_inertia = value;
+		settings2.mechanical_inertia = clamp(value, 0, 100);
 	else
 		return count;
 	
