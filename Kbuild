@@ -1,3 +1,3 @@
 obj-m := hid-simagic-ff.o
-hid-simagic-ff-y := hid-simagic.o
+hid-simagic-ff-y := hid-simagic.o hid-simagic-settings.o hid-simagic-sysfs.o
 ccflags-y := -Idrivers/hid
