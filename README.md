@@ -1,24 +1,17 @@
-# IMPORTANT UPDATE
-
-## Fixes introduced in this repo are upstreamed into kernels after 6.12.24, 6.13.12, 6.14.3, 6.15 and so on. If you're using Alpha (pre v159) or M10, this driver is no longer needed - wheelbase will just work ootb. If that's not the case, please, open new issue here or in https://github.com/JacKeTUs/universal-pidff.
-
 # Force feedback support for Simagic steering wheels
 
 Linux module driver for Simagic driving wheels.
 
-Simagic wheels (with [firmware](#known-issues-with-the-firmware) up to v159) are basically DirectInput wheels without 0xa7 descriptor (effect delay). Current in-tree driver does not take into account the lack of descriptor and fully rejects FFB support.
-In that repository - copy of pidff driver from 6.3 kernel with some patches (removed 0xa7 support), and some changes around infinite length effects (like that https://github.com/berarma/ffbtools/issues/26)
-
-And that's basically it
+This driver adds support for FFB on Simagic new firmware (post fw v159 / Simpro v2). For now only basic effects are present (ConstantForce, SineWave, Damper, Friction, Inertia), but it's enough to play most popular sims.
 
 ## What devices are supported?
 ### Bases:
 1. Simagic Alpha Mini
-2. Simagic Alpha
-3. Simagic Alpha U
-4. Simagic M10
+1. Simagic Alpha
+1. Simagic Alpha U
+1. Simagic M10 (on `main` branch)
+1. Simagic Evo series (on `new-fw` branch)
 
-Just because they have identical VendorID/ProductID (`0x0483` `0x0522`)
 
 ### Wheel rims:
 Tested on GT1, and all buttons works perfectly. I suspect that all rims will work, except of FX-Pro display.
@@ -59,23 +52,36 @@ To unload module:
 
 ## How to set up a base parameters?
 
-You can do it through AlphaManager or SimPro Manager with Wine. You need to tweak Wine prefix for them.
+You can do it through AlphaManager or SimPro Manager with Wine. You can use Steam or custom Wine prefix for them.
 
-AlphaManager works pretty good, but it recognizes only "old" bases (made before ~June 2022) with old firmware (max v108). SimPro 1.x launches, but graphical interface is pretty janky and really slow, i don't recommend using it. SimPro 2.x before 0.116 works with new firmware (max v159) and pretty useful.
+#### Prerequisites:
+You need to install udev rules, which will open hidraw descriptors to the wheelbase, wheels, pedals.
 
-
-That soft uses hidraw to set up a base. You need to create `udev` rule for allow access to hidraw device:
 ```
-# Alpha wheelbases
-echo 'KERNEL=="hidraw*", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="0522", MODE="0666", TAG+="uaccess"' | sudo tee -a /etc/udev/rules.d/11-simagic.rules
-
-# Simagic wheels (including GT Neo, GT Neo X)
+# Simagic devices with 0x3670 VID (GT Neo, Evo wheelbases)
 echo 'KERNEL=="hidraw*", ATTRS{idVendor}=="3670", MODE="0666", TAG+="uaccess"' | sudo tee -a /etc/udev/rules.d/11-simagic.rules
+# Simagic devices with 0x0483 VID (Older wheelbases)
+echo 'KERNEL=="hidraw*", ATTRS{idVendor}=="0483", MODE="0666", TAG+="uaccess"' | sudo tee -a /etc/udev/rules.d/11-simagic.rules
 
 udevadm control --reload-rules && udevadm trigger
 ```
 
-Then you need to force Simagic soft to use hidraw, not SDL, to find devices:
+#### Steam method
+1. Download Simpro Setup.exe
+1. Add Setup.exe to the Steam as Non-Steam Game
+1. Force Proton Experimental
+1. Set launch option as `PROTON_ENABLE_HIDRAW=1 %command%`
+1. Launch the tool through steam, let it install itself into prefix and install every dependency it may need
+1. After successfull setup, in the steam "game" settings change .exe to the path of the installed simpro (you should find it yourself, it should be somewhere in `~/.local/share/Steam/steamapps/compatdata/*someid*/pfx/drive_c/Program Files (x86)/simpro/bin/`, search by recently created folders). Alternatively, use `protontricks -l` to find id of Non-Steam shortcut.
+1. Change exe and game dir accordingly
+   exe:
+     `~/.local/share/Steam/steamapps/compatdata/*someid*/pfx/drive_c/Program Files (x86)/simpro/bin/simpro.exe`
+   dir:
+     `~/.local/share/Steam/steamapps/compatdata/*someid*/pfx/drive_c/Program Files (x86)/simpro/bin`
+1. Launch the tool again, and check if everything detected.
+
+#### Custom Wine prefix
+You need to force Simagic soft to use hidraw, not SDL, to find devices:
 1. Create new Wine prefix for them:
 
       `mkdir ~/simagic-wine`
@@ -92,8 +98,6 @@ Then you need to force Simagic soft to use hidraw, not SDL, to find devices:
     `WINEPREFIX=$HOME/simagic-wine wine AlphaManager.exe ` - launch your SimPro/AlphaManager from installation directory.
 
 
-I'm planning to write another soft, which will copy functionality from AlphaManager and/or SimPro Manager. Or set interfaces for settings for [Oversteer](https://github.com/berarma/oversteer), idk yet.
-
 ## Known issues with the driver
 
 1. ~~If you use `WheelCheck.exe` (iRacing .exe to check FFB on the wheel), it sends some bizare parameters (like 2147483647 in saturation coefficient) to driver - and hid-core rejects it with kernel warning. It does not happening in games, and it's unclear if it is a bug in firmware, or we need to fix pidff driver for it.~~ Fixed - it was unclamped PID_LOOP_COUNT, bug in pidff. 
@@ -107,7 +111,6 @@ Here is some issues, which is also a case for Windows
 2. If you try to change range of the wheel when it is outside requested range - feedback will dissapear completely. Reboot and reconnect base to fix it.
 3. With base firmware greater than v108 some wheel rim functions like GT1 - "Set Rotation Angle" does not work.
 4. GT1 - with wheel firmware 3242 (latest) setting LED mode (slow/fast flashing / off / on) does not work
-5. Firmware v169 and SimPro2.0.116 introduced proprietary protocol for communicating to the wheelbase and does not use standart directinput ffb reports. Please, avoid firmware v169 and SimPro 2.0.116 for the time being.
 
 ## DISCLAIMER
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
