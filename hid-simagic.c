@@ -473,6 +473,7 @@ static int simagic_ff_initffb(struct hid_device *hid) {
 	set_bit(FF_FRICTION, dev->ffbit);
 	set_bit(FF_PERIODIC, dev->ffbit);
 	/*set_bit(FF_CUSTOM, dev->ffbit);*/
+	set_bit(FF_GAIN, dev->ffbit);
 
 	error = input_ff_create(dev, max_effects);
 	if (error)
