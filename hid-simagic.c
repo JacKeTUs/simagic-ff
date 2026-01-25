@@ -21,6 +21,7 @@
 #define SM_SET_CONSTANT_REPORT 0x05
 #define SM_SET_RAMP_FORCE_REPORT 0x16
 #define SM_SET_CUSTOM_FORCE_REPORT 0x17
+#define SM_SET_GAIN 0x40
 
 #define SM_EFFECT_OPERATION_REPORT 0x0a
 
@@ -422,7 +423,20 @@ static int sm_playback(struct input_dev *dev, int effect_id, int count) {
 }
 
 static void sm_set_gain(struct input_dev *dev, u16 gain) {
+	struct hid_device *hid = input_get_drvdata(dev);
+	struct list_head *report_list = &hid->report_enum[HID_OUTPUT_REPORT].report_list;
+	struct hid_report *report = list_entry(report_list->next, struct hid_report, list);
+	s32 *value = report->field[0]->value;
+
 	hid_info(dev, "Setting gain: %d\n", gain);
+
+	for (int i = 0; i < 64; i++) {
+		value[i] = 0;
+	}
+	value[0] = SM_SET_GAIN;
+	value[1] = gain >> 8;
+
+	hid_hw_request(hid, report, HID_REQ_SET_REPORT);
 }
 
 static void sm_set_autocenter(struct input_dev *dev, u16 magnitude) {
