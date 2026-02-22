@@ -149,7 +149,7 @@ static ssize_t simagic_attribute_settings1_store(
 	if (attr == &dev_attr_max_angle)
 		settings1.max_angle = cpu_to_le16((u16)clamp(value, 0, 2520));
 	else if (attr == &dev_attr_ff_strength)
-		settings1.ff_strength = cpu_to_le16((u16)clamp(value, 0, 100));
+		settings1.ff_strength = cpu_to_le16((u16)clamp(value, -100, 100));
 	else if (attr == &dev_attr_wheel_rotation_speed)
 		settings1.wheel_rotation_speed = clamp(value, 0, 100);
 	else if (attr == &dev_attr_mechanical_centering)
