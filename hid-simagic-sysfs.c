@@ -88,9 +88,9 @@ static ssize_t simagic_attribute_status1_show(
 	}
 
 	if (attr == &dev_attr_max_angle)
-		value = status1.max_angle;
+		value = le16_to_cpu(status1.max_angle);
 	else if (attr == &dev_attr_ff_strength)
-		value = status1.ff_strength;
+		value = (s16)le16_to_cpu(status1.ff_strength);
 	else if (attr == &dev_attr_wheel_rotation_speed)
 		value = status1.wheel_rotation_speed;
 	else if (attr == &dev_attr_mechanical_centering)
