@@ -34,7 +34,7 @@ Using new Alpha QR Passthrough, which is just USB connection, is out of scope of
 
 ## How to use that driver?
 You can install it through DKMS or manually.
-### DKMS
+### DKMS (recommended)
 1. Install `dkms`
 1. Clone repository to `/usr/src/simagic-ff`
 1. Install the module: 
@@ -45,7 +45,7 @@ You can install it through DKMS or manually.
 
 To remove module:
 `sudo dkms remove simagic-ff/<version> --all`
-### Manually 
+### Manually (for development or testing new features)
 
 1. Install `linux-headers-$(uname -r)`
 1. Clone repository
@@ -55,6 +55,7 @@ To remove module:
 To unload module:
 `sudo rmmod hid_simagic_ff`
 
+Be aware that `insmod` loads the kernel module temporarily. It does not autoload driver when system is booting up. Consider using DKMS for autoloading and auto-upgrading with kernel.
 
 ## How to set up a base parameters?
 
@@ -71,6 +72,7 @@ echo 'KERNEL=="hidraw*", ATTRS{idVendor}=="0483", MODE="0666", TAG+="uaccess"' |
 
 udevadm control --reload-rules && udevadm trigger
 ```
+Note: number in rules filename matters. Udev loads them in order, and your OS probably has some builtin rules by default (`/usr/lib/udev/rules.d/*`).
 
 #### Steam method
 1. Download Simpro Setup.exe
