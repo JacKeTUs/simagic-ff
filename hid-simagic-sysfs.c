@@ -110,7 +110,7 @@ static ssize_t simagic_attribute_status1_show(
 	else if (attr == &dev_attr_game_friction)
 		value = status1.game_friction;
 	else if (attr == &dev_attr_angle_lock)
-		value = status1.angle_lock;
+		value = le16_to_cpu(status1.angle_lock);
 	else if (attr == &dev_attr_feedback_detail)
 		value = status1.feedback_detail;
 	else if (attr == &dev_attr_angle_lock_strength)
