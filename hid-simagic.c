@@ -161,6 +161,9 @@ int sm_hid_get_report(struct hid_device *hid, u8 report, u8 *buffer, size_t len,
 		return -EINVAL;
 
 	tmp_buf = kzalloc(len, GFP_KERNEL);
+	if (!tmp_buf)
+		return -ENOMEM;
+
 	ret = hid_hw_raw_request(hid, report, tmp_buf, len, rtype, HID_REQ_GET_REPORT);
 	if (ret >= 0) {
 		hid_hw_wait(hid);
@@ -187,6 +190,9 @@ int sm_hid_set_report(struct hid_device *hid, u8 report, u8 *buffer, size_t len,
 		return -EINVAL;
 
 	tmp_buf = kzalloc(len, GFP_KERNEL);
+	if (!tmp_buf)
+		return -ENOMEM;
+	
 	memcpy(tmp_buf, buffer, len);
 	ret = hid_hw_raw_request(hid, report, tmp_buf, len, rtype, HID_REQ_SET_REPORT);
 	if (ret >= 0) {
