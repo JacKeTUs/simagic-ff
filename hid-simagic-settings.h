@@ -33,7 +33,9 @@ struct smff_status1_report {
 	u8 unknown_offset_53[2];
 	u8 wheel_channel;
 	u8 unknown_offset_55; // voltage?
-	u8 unknown_offset_56[7];
+	u8 unknown_offset_56;
+	u8 unknown_offset_57[2]; // fw version? (little endian value % 1000?)
+	u8 unknown_offset_59[4];
 };
 
 struct smff_settings1_report {
