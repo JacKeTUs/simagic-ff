@@ -554,6 +554,7 @@ static int simagic_probe(struct hid_device *hdev, const struct hid_device_id *id
 
 	ret = simagic_ff_initffb(hdev);
 	if (ret) {
+		hid_hw_stop(hdev);
 		hid_warn(hdev, "No force feedback\n");
 		goto err;
 	}
