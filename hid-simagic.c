@@ -294,8 +294,8 @@ static int sm_set_condition_report(struct input_dev *dev, struct ff_effect *effe
 	int center = sm_rescale_signed_to_10k(effect->u.condition[0].center);
 	int right_coeff = sm_rescale_signed_to_10k(effect->u.condition[0].right_coeff);
 	int left_coeff = sm_rescale_signed_to_10k(effect->u.condition[0].left_coeff);
-	int right_sat = sm_rescale_coeffs(effect->u.condition[0].right_saturation, 0xffff, -10000, 10000);
-	int left_sat = sm_rescale_coeffs(effect->u.condition[0].left_saturation, 0xffff, -10000, 10000);
+	int right_sat = sm_rescale_coeffs(effect->u.condition[0].right_saturation, 0xffff, 0, 10000);
+	int left_sat = sm_rescale_coeffs(effect->u.condition[0].left_saturation, 0xffff, 0, 10000);
 	int deadband = sm_rescale_coeffs(effect->u.condition[0].deadband, 0xffff, 0,10000);
 
 	hid_info(dev, "Condition[0] params scaled: center %d, rightC %d, leftC %d, rightS %d, leftS %d, deadband %d\n", 
