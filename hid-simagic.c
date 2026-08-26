@@ -161,6 +161,9 @@ int sm_hid_get_report(struct hid_device *hid, u8 report, u8 *buffer, size_t len,
 		return -EINVAL;
 
 	tmp_buf = kzalloc(len, GFP_KERNEL);
+	if (!tmp_buf)
+		return -ENOMEM;
+
 	ret = hid_hw_raw_request(hid, report, tmp_buf, len, rtype, HID_REQ_GET_REPORT);
 	if (ret >= 0) {
 		hid_hw_wait(hid);
@@ -187,6 +190,9 @@ int sm_hid_set_report(struct hid_device *hid, u8 report, u8 *buffer, size_t len,
 		return -EINVAL;
 
 	tmp_buf = kzalloc(len, GFP_KERNEL);
+	if (!tmp_buf)
+		return -ENOMEM;
+	
 	memcpy(tmp_buf, buffer, len);
 	ret = hid_hw_raw_request(hid, report, tmp_buf, len, rtype, HID_REQ_SET_REPORT);
 	if (ret >= 0) {
@@ -197,19 +203,53 @@ int sm_hid_set_report(struct hid_device *hid, u8 report, u8 *buffer, size_t len,
 	return ret;
 }
 
+/*
+ * Fetch the output report used to send effects. The packets below are built at
+ * fixed offsets into field 0, so refuse a report that cannot hold min_values
+ * entries instead of writing past the value array. With clear set the value
+ * array is zeroed, ready for a fresh packet.
+ */
+static struct hid_report *sm_get_output_report(struct hid_device *hid,
+	unsigned int min_values, bool clear)
+{
+	struct list_head *report_list = &hid->report_enum[HID_OUTPUT_REPORT].report_list;
+	struct hid_report *report;
+	struct hid_field *field;
+
+	if (list_empty(report_list)) {
+		hid_err(hid, "no output report\n");
+		return NULL;
+	}
+
+	report = list_first_entry(report_list, struct hid_report, list);
+
+	if (report->maxfield < 1 || report->field[0]->report_count < min_values) {
+		hid_err(hid, "output report too small, need %u values\n", min_values);
+		return NULL;
+	}
+
+	field = report->field[0];
+
+	if (clear)
+		memset(field->value, 0, field->report_count * sizeof(*field->value));
+
+	return report;
+}
+
 static int sm_set_constant_report(struct input_dev *dev, struct ff_effect *effect)
 {
 	struct hid_device *hid = input_get_drvdata(dev);
-	struct list_head *report_list = &hid->report_enum[HID_OUTPUT_REPORT].report_list;
-	struct hid_report *report = list_entry(report_list->next, struct hid_report, list);
-	s32 *value = report->field[0]->value;
+	struct hid_report *report = sm_get_output_report(hid, 4, true);
+	s32 *value;
+
+	if (!report)
+		return -ENODEV;
+
+	value = report->field[0]->value;
 
 	hid_info(dev, "Constant upload: type %u, id: %u\n", effect->type, effect->id);
 	hid_info(dev, "report id: %d", report->id);
 
-	for (int i = 0; i < 64; i++) {
-		value[i] = 0;
-	}
 	value[0] = SM_SET_CONSTANT_REPORT;
 	value[1] = get_block_id(effect);
 	hid_info(dev, "Const params: level: %d\n", 
@@ -228,16 +268,17 @@ static int sm_set_constant_report(struct input_dev *dev, struct ff_effect *effec
 static int sm_set_condition_report(struct input_dev *dev, struct ff_effect *effect)
 {
 	struct hid_device *hid = input_get_drvdata(dev);
-	struct list_head *report_list = &hid->report_enum[HID_OUTPUT_REPORT].report_list;
-	struct hid_report *report = list_entry(report_list->next, struct hid_report, list);
-	s32 *value = report->field[0]->value;
+	struct hid_report *report = sm_get_output_report(hid, 15, true);
+	s32 *value;
+
+	if (!report)
+		return -ENODEV;
+
+	value = report->field[0]->value;
 
 	hid_info(dev, "Condition upload: type %u, id: %u\n", effect->type, effect->id);
 	hid_info(dev, "report id: %d", report->id);
 
-	for (int i = 0; i < 64; i++) {
-		value[i] = 0;
-	}
 	value[0] = SM_SET_CONDITION_REPORT; // upd cond
 	value[1] = get_block_id(effect);
 
@@ -253,8 +294,8 @@ static int sm_set_condition_report(struct input_dev *dev, struct ff_effect *effe
 	int center = sm_rescale_signed_to_10k(effect->u.condition[0].center);
 	int right_coeff = sm_rescale_signed_to_10k(effect->u.condition[0].right_coeff);
 	int left_coeff = sm_rescale_signed_to_10k(effect->u.condition[0].left_coeff);
-	int right_sat = sm_rescale_coeffs(effect->u.condition[0].right_saturation, 0xffff, -10000, 10000);
-	int left_sat = sm_rescale_coeffs(effect->u.condition[0].left_saturation, 0xffff, -10000, 10000);
+	int right_sat = sm_rescale_coeffs(effect->u.condition[0].right_saturation, 0xffff, 0, 10000);
+	int left_sat = sm_rescale_coeffs(effect->u.condition[0].left_saturation, 0xffff, 0, 10000);
 	int deadband = sm_rescale_coeffs(effect->u.condition[0].deadband, 0xffff, 0,10000);
 
 	hid_info(dev, "Condition[0] params scaled: center %d, rightC %d, leftC %d, rightS %d, leftS %d, deadband %d\n", 
@@ -284,9 +325,13 @@ static int sm_set_condition_report(struct input_dev *dev, struct ff_effect *effe
 static int sm_set_periodic_report(struct input_dev *dev, struct ff_effect *effect)
 {
 	struct hid_device *hid = input_get_drvdata(dev);
-	struct list_head *report_list = &hid->report_enum[HID_OUTPUT_REPORT].report_list;
-	struct hid_report *report = list_entry(report_list->next, struct hid_report, list);
-	s32 *value = report->field[0]->value;
+	struct hid_report *report = sm_get_output_report(hid, 10, true);
+	s32 *value;
+
+	if (!report)
+		return -ENODEV;
+
+	value = report->field[0]->value;
 
 	hid_info(dev, "Periodic upload: type %u, id: %u\n", effect->type, effect->id);
 	hid_info(dev, "report id: %d", report->id);
@@ -307,9 +352,6 @@ static int sm_set_periodic_report(struct input_dev *dev, struct ff_effect *effec
 	hid_info(dev, "Periodic params scaled: period %d, magnitude %d, offset %d, phase %d\n", 
 		period, magnitude, offset,  phase);
 
-	for (int i = 0; i < 64; i++) {
-		value[i] = 0;
-	}
 	value[0] = SM_SET_PERIODIC_REPORT;
 	value[1] = get_block_id(effect);
 	value[2] = magnitude & 0x00ff;
@@ -330,16 +372,16 @@ static int sm_set_periodic_report(struct input_dev *dev, struct ff_effect *effec
 static int sm_set_effect_report(struct input_dev *dev, struct ff_effect *effect) {
 	struct hid_device *hid = input_get_drvdata(dev);
 	struct smff_device *smff = dev->ff->private;
-	struct list_head *report_list = &hid->report_enum[HID_OUTPUT_REPORT].report_list;
-	struct hid_report *report = list_entry(report_list->next, struct hid_report, list);
-	s32 *value = report->field[0]->value;
+	struct hid_report *report = sm_get_output_report(hid, 13, true);
 	int dur = effect->replay.length == 0 ? 0xffff: effect->replay.length;
-	int i;
+	s32 *value;
+
+	if (!report)
+		return -ENODEV;
+
+	value = report->field[0]->value;
 
 	hid_info(dev, "NEW Effect upload: ef type: %d\n", effect->type);
-	for (i = 0; i < 64; i++) {
-		value[i] = 0;
-	}
 	smff->pid_id[effect->id] = get_block_id(effect);
 	value[0] = SM_SET_EFFECT_REPORT;
 	value[1] = get_block_id(effect);
@@ -356,26 +398,25 @@ static int sm_set_effect_report(struct input_dev *dev, struct ff_effect *effect)
 }
 
 static int sm_upload(struct input_dev *dev, struct ff_effect *effect, struct ff_effect *old) {
-	struct hid_device *hid = input_get_drvdata(dev);
-	struct list_head *report_list = &hid->report_enum[HID_OUTPUT_REPORT].report_list;
-	struct hid_report *report = list_entry(report_list->next, struct hid_report, list);
+	int ret;
 
 	hid_info(dev, "Effect upload: type %u, id: %u\n", effect->type, effect->id);
-	hid_info(dev, "report id: %d", report->id);
 	if (!old) {
-		sm_set_effect_report(dev, effect);
+		ret = sm_set_effect_report(dev, effect);
+		if (ret)
+			return ret;
 	}
 	if (effect->type == FF_CONSTANT) {
-		sm_set_constant_report(dev, effect);
+		ret = sm_set_constant_report(dev, effect);
 	}
 	else if (effect->type == FF_PERIODIC) {
-		sm_set_periodic_report(dev, effect);
+		ret = sm_set_periodic_report(dev, effect);
 	}
 	else {
-		sm_set_condition_report(dev, effect);
+		ret = sm_set_condition_report(dev, effect);
 	}
 
-	return 0;
+	return ret;
 }
 
 static int sm_erase(struct input_dev *dev, int effect_id) {
@@ -389,17 +430,17 @@ static int sm_erase(struct input_dev *dev, int effect_id) {
 
 static int sm_req_playback(struct input_dev *dev, int sm_block_id, int count) {
 	struct hid_device *hid = input_get_drvdata(dev);
-	int i;
-	struct list_head *report_list = &hid->report_enum[HID_OUTPUT_REPORT].report_list;
-	struct hid_report *report = list_entry(report_list->next, struct hid_report, list);
-	s32 *value = report->field[0]->value;
+	struct hid_report *report = sm_get_output_report(hid, 5, true);
+	s32 *value;
 
-	hid_info(dev, "Effect play: sm_id: %u, count %d\n", sm_block_id, count);	
+	if (!report)
+		return -ENODEV;
+
+	value = report->field[0]->value;
+
+	hid_info(dev, "Effect play: sm_id: %u, count %d\n", sm_block_id, count);
 	hid_info(dev, "report id: %d", report->id);
 
-	for (i = 0; i < 64; i++) {
-		value[i] = 0;
-	}
 	value[0] = SM_EFFECT_OPERATION_REPORT;
 	value[1] = sm_block_id; 
 	if (count > 0) {
@@ -418,21 +459,21 @@ static int sm_req_playback(struct input_dev *dev, int sm_block_id, int count) {
 static int sm_playback(struct input_dev *dev, int effect_id, int count) {
 	struct smff_device *pidff = dev->ff->private;
 	hid_info(dev, "PLAYBACK: ID: %d, count %d\n", effect_id, count);
-	sm_req_playback(dev, pidff->pid_id[effect_id], count);
-	return 0;
+	return sm_req_playback(dev, pidff->pid_id[effect_id], count);
 }
 
 static void sm_set_gain(struct input_dev *dev, u16 gain) {
 	struct hid_device *hid = input_get_drvdata(dev);
-	struct list_head *report_list = &hid->report_enum[HID_OUTPUT_REPORT].report_list;
-	struct hid_report *report = list_entry(report_list->next, struct hid_report, list);
-	s32 *value = report->field[0]->value;
+	struct hid_report *report = sm_get_output_report(hid, 2, true);
+	s32 *value;
+
+	if (!report)
+		return;
+
+	value = report->field[0]->value;
 
 	hid_info(dev, "Setting gain: %d\n", gain);
 
-	for (int i = 0; i < 64; i++) {
-		value[i] = 0;
-	}
 	value[0] = SM_SET_GAIN;
 	value[1] = gain >> 8;
 
@@ -513,6 +554,7 @@ static int simagic_probe(struct hid_device *hdev, const struct hid_device_id *id
 
 	ret = simagic_ff_initffb(hdev);
 	if (ret) {
+		hid_hw_stop(hdev);
 		hid_warn(hdev, "No force feedback\n");
 		goto err;
 	}
