@@ -34,7 +34,7 @@ struct smff_status1_report {
 	u8 wheel_channel;
 	u8 unknown_offset_55; // voltage?
 	u8 unknown_offset_56;
-	u8 unknown_offset_57[2]; // fw version? (little endian value % 1000?)
+	__le16 firmware_version;
 	u8 unknown_offset_59[4];
 };
 

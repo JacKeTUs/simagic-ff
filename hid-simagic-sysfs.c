@@ -73,6 +73,7 @@ SM_SYSFS_ATTR_RO(wheel_channel, simagic_attribute_status1_show);
 SM_SYSFS_ATTR_RW(ring_light_enabled, simagic_attribute_status1_show, simagic_attribute_settings3_store);
 //TODO: changing ring light brightness appears to need some other packet to refresh led brightness
 //SM_SYSFS_ATTR_RO(ring_light_brightness, simagic_attribute_status1_show, simagic_attribute_settings3_store);
+SM_SYSFS_ATTR_RO(fw_version, simagic_attribute_status1_show);
 
 static ssize_t simagic_attribute_status1_show(
 	struct device *dev,
@@ -125,6 +126,8 @@ static ssize_t simagic_attribute_status1_show(
 		value = status1.wheel_channel;
 	else if (attr == &dev_attr_ring_light_enabled)
 		value = (status1.ring_light & 0x80) ? 1 : 0;
+	else if (attr == &dev_attr_fw_version)
+		value = le16_to_cpu(status1.firmware_version) % 1000;
 	else
 		return sysfs_emit(buf, "Unknown attribute\n");
 
@@ -289,6 +292,7 @@ void simagic_ff_initsysfs(struct hid_device *hid) {
 	device_create_file(&hid->dev, &dev_attr_mechanical_inertia);
 	device_create_file(&hid->dev, &dev_attr_filter_level);
 	device_create_file(&hid->dev, &dev_attr_wheel_channel);
+	device_create_file(&hid->dev, &dev_attr_fw_version);
 	if (smff->is_alpha_evo) {
 		device_create_file(&hid->dev, &dev_attr_slew_rate_control);
 		device_create_file(&hid->dev, &dev_attr_ring_light_enabled);
@@ -310,6 +314,7 @@ void simagic_ff_removesysfs(struct hid_device *hid) {
 		device_remove_file(&hid->dev, &dev_attr_slew_rate_control);
 	}
 
+	device_remove_file(&hid->dev, &dev_attr_fw_version);
 	device_remove_file(&hid->dev, &dev_attr_wheel_channel);
 	device_remove_file(&hid->dev, &dev_attr_filter_level);
 	device_remove_file(&hid->dev, &dev_attr_angle_lock_strength);
