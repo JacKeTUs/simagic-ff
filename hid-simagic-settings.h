@@ -32,8 +32,8 @@ struct smff_status1_report {
 	u8 slew_rate_control;
 	u8 unknown_offset_53[2];
 	u8 wheel_channel;
-	u8 unknown_offset_55; // voltage?
-	u8 unknown_offset_56;
+	u8 unknown_offset_56; // voltage?
+	u8 unknown_offset_57;
 	__le16 firmware_version;
 	u8 unknown_offset_59[4];
 };
