@@ -49,13 +49,14 @@ static const struct hid_device_id simagic_devices[] = {
 MODULE_DEVICE_TABLE(hid, simagic_devices);
 
 struct smff_device* get_smff_from_hid(struct hid_device *hid) {
-	struct hid_input *hidinput = list_entry(hid->inputs.next,
-						struct hid_input, list);
+	struct hid_input *hidinput;
 	struct input_dev *dev;
 	struct ff_device *ff;
 
-	if (hidinput == NULL)
+	if (list_empty(&hid->inputs))
 		return NULL;
+	
+	hidinput = list_entry(hid->inputs.next, struct hid_input, list);
 	
 	dev = hidinput->input;
 	if (dev == NULL)
@@ -444,13 +445,20 @@ static void sm_set_autocenter(struct input_dev *dev, u16 magnitude) {
 }
 
 static int simagic_ff_initffb(struct hid_device *hid) {
-	struct hid_input *hidinput = list_entry(hid->inputs.next,
-						struct hid_input, list);
-	struct input_dev *dev = hidinput->input;
+	struct hid_input *hidinput;
+	struct input_dev *dev;
 	struct ff_device *ff;
 	struct smff_device *smff;
 	int max_effects = 16;
 	int error = -ENODEV;
+
+	if (list_empty(&hid->inputs)) {
+		hid_warn(hid, "no inputs found\n");
+		return -ENODEV;
+	}
+
+	hidinput = list_entry(hid->inputs.next, struct hid_input, list);
+	dev = hidinput->input;
 
 	smff = kzalloc(sizeof(*smff), GFP_KERNEL);
 	if (!smff)
@@ -513,8 +521,16 @@ static int simagic_probe(struct hid_device *hdev, const struct hid_device_id *id
 
 	ret = simagic_ff_initffb(hdev);
 	if (ret) {
-		hid_warn(hdev, "No force feedback\n");
-		goto err;
+		/*
+		 * This interface has no FF-capable hid_input (e.g. the
+		 * wheelbase's secondary hiddev-only interface). That's not
+		 * fatal: hid_hw_start() above already registered its
+		 * hidraw/hiddev nodes. Failing probe here would leave those
+		 * nodes bound to no driver, which crashes hid_hw_open() (and
+		 * hence any userspace open()) with a NULL hdev->driver deref.
+		 * Keep the interface claimed with FF simply unavailable.
+		 */
+		hid_info(hdev, "No force feedback\n");
 	}
 	return 0;
 err:
