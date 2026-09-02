@@ -204,19 +204,19 @@ static int sm_set_constant_report(struct input_dev *dev, struct ff_effect *effec
 	struct hid_report *report = list_entry(report_list->next, struct hid_report, list);
 	s32 *value = report->field[0]->value;
 
-	hid_info(dev, "Constant upload: type %u, id: %u\n", effect->type, effect->id);
-	hid_info(dev, "report id: %d", report->id);
+	hid_dbg(dev, "Constant upload: type %u, id: %u\n", effect->type, effect->id);
+	hid_dbg(dev, "report id: %d", report->id);
 
 	for (int i = 0; i < 64; i++) {
 		value[i] = 0;
 	}
 	value[0] = SM_SET_CONSTANT_REPORT;
 	value[1] = get_block_id(effect);
-	hid_info(dev, "Const params: level: %d\n", 
+	hid_dbg(dev, "Const params: level: %d\n",
 		effect->u.constant.level);
 
 	int mag = sm_rescale_signed_to_10k(effect->u.constant.level);
-	hid_info(dev, "Const params: level scaled: %d\n", 
+	hid_dbg(dev, "Const params: level scaled: %d\n",
 		mag);
 	value[2] = mag & 0x00ff;
 	value[3] = (mag & 0xff00) >> 8;
@@ -232,8 +232,8 @@ static int sm_set_condition_report(struct input_dev *dev, struct ff_effect *effe
 	struct hid_report *report = list_entry(report_list->next, struct hid_report, list);
 	s32 *value = report->field[0]->value;
 
-	hid_info(dev, "Condition upload: type %u, id: %u\n", effect->type, effect->id);
-	hid_info(dev, "report id: %d", report->id);
+	hid_dbg(dev, "Condition upload: type %u, id: %u\n", effect->type, effect->id);
+	hid_dbg(dev, "report id: %d", report->id);
 
 	for (int i = 0; i < 64; i++) {
 		value[i] = 0;
@@ -241,11 +241,11 @@ static int sm_set_condition_report(struct input_dev *dev, struct ff_effect *effe
 	value[0] = SM_SET_CONDITION_REPORT; // upd cond
 	value[1] = get_block_id(effect);
 
-	hid_info(dev, "Condition[0] params: center %d, rightC %d, leftC %d, rightS %d, leftS %d, deadband %d\n", 
+	hid_dbg(dev, "Condition[0] params: center %d, rightC %d, leftC %d, rightS %d, leftS %d, deadband %d\n",
 		effect->u.condition[0].center, effect->u.condition[0].right_coeff, effect->u.condition[0].left_coeff, 
 		effect->u.condition[0].right_saturation, effect->u.condition[0].left_saturation, 
 		effect->u.condition[0].deadband);
-	hid_info(dev, "Condition[1] params: center %d, rightC %d, leftC %d, rightS %d, leftS %d, deadband %d\n", 
+	hid_dbg(dev, "Condition[1] params: center %d, rightC %d, leftC %d, rightS %d, leftS %d, deadband %d\n",
 		effect->u.condition[1].center, effect->u.condition[1].right_coeff, effect->u.condition[1].left_coeff, 
 		effect->u.condition[1].right_saturation, effect->u.condition[1].left_saturation, 
 		effect->u.condition[1].deadband);
@@ -257,7 +257,7 @@ static int sm_set_condition_report(struct input_dev *dev, struct ff_effect *effe
 	int left_sat = sm_rescale_coeffs(effect->u.condition[0].left_saturation, 0xffff, -10000, 10000);
 	int deadband = sm_rescale_coeffs(effect->u.condition[0].deadband, 0xffff, 0,10000);
 
-	hid_info(dev, "Condition[0] params scaled: center %d, rightC %d, leftC %d, rightS %d, leftS %d, deadband %d\n", 
+	hid_dbg(dev, "Condition[0] params scaled: center %d, rightC %d, leftC %d, rightS %d, leftS %d, deadband %d\n",
 		center, right_coeff, left_coeff, 
 		right_sat, left_sat, 
 		deadband);
@@ -288,10 +288,10 @@ static int sm_set_periodic_report(struct input_dev *dev, struct ff_effect *effec
 	struct hid_report *report = list_entry(report_list->next, struct hid_report, list);
 	s32 *value = report->field[0]->value;
 
-	hid_info(dev, "Periodic upload: type %u, id: %u\n", effect->type, effect->id);
-	hid_info(dev, "report id: %d", report->id);
+	hid_dbg(dev, "Periodic upload: type %u, id: %u\n", effect->type, effect->id);
+	hid_dbg(dev, "report id: %d", report->id);
 
-	hid_info(dev, "Periodic params: waveform %d, period %d, magnitude %d, offset %d, phase %d\n", 
+	hid_dbg(dev, "Periodic params: waveform %d, period %d, magnitude %d, offset %d, phase %d\n",
 		effect->u.periodic.waveform, effect->u.periodic.period, effect->u.periodic.magnitude, 
 		effect->u.periodic.offset, effect->u.periodic.phase);
 
@@ -304,7 +304,7 @@ static int sm_set_periodic_report(struct input_dev *dev, struct ff_effect *effec
 	int offset = sm_rescale_signed_to_10k(effect->u.periodic.offset);
 	int phase = sm_rescale_signed_to_10k(effect->u.periodic.phase);
 
-	hid_info(dev, "Periodic params scaled: period %d, magnitude %d, offset %d, phase %d\n", 
+	hid_dbg(dev, "Periodic params scaled: period %d, magnitude %d, offset %d, phase %d\n",
 		period, magnitude, offset,  phase);
 
 	for (int i = 0; i < 64; i++) {
@@ -336,7 +336,7 @@ static int sm_set_effect_report(struct input_dev *dev, struct ff_effect *effect)
 	int dur = effect->replay.length == 0 ? 0xffff: effect->replay.length;
 	int i;
 
-	hid_info(dev, "NEW Effect upload: ef type: %d\n", effect->type);
+	hid_dbg(dev, "NEW Effect upload: ef type: %d\n", effect->type);
 	for (i = 0; i < 64; i++) {
 		value[i] = 0;
 	}
@@ -360,8 +360,8 @@ static int sm_upload(struct input_dev *dev, struct ff_effect *effect, struct ff_
 	struct list_head *report_list = &hid->report_enum[HID_OUTPUT_REPORT].report_list;
 	struct hid_report *report = list_entry(report_list->next, struct hid_report, list);
 
-	hid_info(dev, "Effect upload: type %u, id: %u\n", effect->type, effect->id);
-	hid_info(dev, "report id: %d", report->id);
+	hid_dbg(dev, "Effect upload: type %u, id: %u\n", effect->type, effect->id);
+	hid_dbg(dev, "report id: %d", report->id);
 	if (!old) {
 		sm_set_effect_report(dev, effect);
 	}
@@ -381,7 +381,7 @@ static int sm_upload(struct input_dev *dev, struct ff_effect *effect, struct ff_
 static int sm_erase(struct input_dev *dev, int effect_id) {
 	//struct hid_device *hid = input_get_drvdata(dev);
 	struct smff_device *smff = dev->ff->private;
-	hid_info(dev, "Effect erase: id: %d/%d\n", effect_id, smff->pid_id[effect_id]);
+	hid_dbg(dev, "Effect erase: id: %d/%d\n", effect_id, smff->pid_id[effect_id]);
 	return 0;
 }
 
@@ -394,8 +394,8 @@ static int sm_req_playback(struct input_dev *dev, int sm_block_id, int count) {
 	struct hid_report *report = list_entry(report_list->next, struct hid_report, list);
 	s32 *value = report->field[0]->value;
 
-	hid_info(dev, "Effect play: sm_id: %u, count %d\n", sm_block_id, count);	
-	hid_info(dev, "report id: %d", report->id);
+	hid_dbg(dev, "Effect play: sm_id: %u, count %d\n", sm_block_id, count);
+	hid_dbg(dev, "report id: %d", report->id);
 
 	for (i = 0; i < 64; i++) {
 		value[i] = 0;
@@ -417,7 +417,7 @@ static int sm_req_playback(struct input_dev *dev, int sm_block_id, int count) {
 
 static int sm_playback(struct input_dev *dev, int effect_id, int count) {
 	struct smff_device *pidff = dev->ff->private;
-	hid_info(dev, "PLAYBACK: ID: %d, count %d\n", effect_id, count);
+	hid_dbg(dev, "PLAYBACK: ID: %d, count %d\n", effect_id, count);
 	sm_req_playback(dev, pidff->pid_id[effect_id], count);
 	return 0;
 }
@@ -428,7 +428,7 @@ static void sm_set_gain(struct input_dev *dev, u16 gain) {
 	struct hid_report *report = list_entry(report_list->next, struct hid_report, list);
 	s32 *value = report->field[0]->value;
 
-	hid_info(dev, "Setting gain: %d\n", gain);
+	hid_dbg(dev, "Setting gain: %d\n", gain);
 
 	for (int i = 0; i < 64; i++) {
 		value[i] = 0;
@@ -440,7 +440,7 @@ static void sm_set_gain(struct input_dev *dev, u16 gain) {
 }
 
 static void sm_set_autocenter(struct input_dev *dev, u16 magnitude) {
-	hid_info(dev, "Setting autocenter: %d\n", magnitude);
+	hid_dbg(dev, "Setting autocenter: %d\n", magnitude);
 }
 
 static int simagic_ff_initffb(struct hid_device *hid) {
