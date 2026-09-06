@@ -69,6 +69,8 @@ SM_SYSFS_ATTR_RW(angle_lock_strength, simagic_attribute_status1_show, simagic_at
 SM_SYSFS_ATTR_RW(mechanical_inertia, simagic_attribute_status1_show, simagic_attribute_settings2_store);
 SM_SYSFS_ATTR_RW(filter_level, simagic_attribute_status1_show, simagic_attribute_settings4_store);
 SM_SYSFS_ATTR_RW(slew_rate_control, simagic_attribute_status1_show, simagic_attribute_settings4_store);
+SM_SYSFS_ATTR_RW(dynamic_prediction_level, simagic_attribute_status1_show, simagic_attribute_settings4_store);
+SM_SYSFS_ATTR_RW(steering_torque_assist, simagic_attribute_status1_show, simagic_attribute_settings4_store);
 SM_SYSFS_ATTR_RO(wheel_channel, simagic_attribute_status1_show);
 SM_SYSFS_ATTR_RW(ring_light_enabled, simagic_attribute_status1_show, simagic_attribute_settings3_store);
 //TODO: changing ring light brightness appears to need some other packet to refresh led brightness
@@ -121,6 +123,10 @@ static ssize_t simagic_attribute_status1_show(
 		value = status1.filter_level;
 	else if (attr == &dev_attr_slew_rate_control)
 		value = status1.slew_rate_control;
+	else if (attr == &dev_attr_dynamic_prediction_level)
+		value = status1.dynamic_prediction_level;
+	else if (attr == &dev_attr_steering_torque_assist)
+		value = status1.steering_torque_assist;
 	else if (attr == &dev_attr_wheel_channel)
 		value = status1.wheel_channel;
 	else if (attr == &dev_attr_ring_light_enabled)
@@ -255,9 +261,13 @@ static ssize_t simagic_attribute_settings4_store(
 		settings4.filter_level = clamp(value, 0, 20);
 	else if (attr == &dev_attr_slew_rate_control)
 		settings4.slew_rate_control = clamp(value, 0, 100);
+	else if (attr == &dev_attr_dynamic_prediction_level)
+		settings4.dynamic_prediction_level = clamp(value, 0, 10);
+	else if (attr == &dev_attr_steering_torque_assist)
+		settings4.steering_torque_assist = clamp(value, 0, 100);
 	else
 		return count;
-	
+
 	sm_write_settings4(hid, &settings4);
 	
 	return count;
@@ -289,6 +299,8 @@ void simagic_ff_initsysfs(struct hid_device *hid) {
 	device_create_file(&hid->dev, &dev_attr_mechanical_inertia);
 	device_create_file(&hid->dev, &dev_attr_filter_level);
 	device_create_file(&hid->dev, &dev_attr_wheel_channel);
+	device_create_file(&hid->dev, &dev_attr_dynamic_prediction_level);
+	device_create_file(&hid->dev, &dev_attr_steering_torque_assist);
 	if (smff->is_alpha_evo) {
 		device_create_file(&hid->dev, &dev_attr_slew_rate_control);
 		device_create_file(&hid->dev, &dev_attr_ring_light_enabled);
@@ -327,5 +339,7 @@ void simagic_ff_removesysfs(struct hid_device *hid) {
 	device_remove_file(&hid->dev, &dev_attr_wheel_rotation_speed);
 	device_remove_file(&hid->dev, &dev_attr_ff_strength);
 	device_remove_file(&hid->dev, &dev_attr_max_angle);
+	device_remove_file(&hid->dev, &dev_attr_steering_torque_assist);
+	device_remove_file(&hid->dev, &dev_attr_dynamic_prediction_level);
 	smff->sysfs_created = false;
 }

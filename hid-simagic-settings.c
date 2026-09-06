@@ -232,16 +232,18 @@ bool sm_read_settings4(struct hid_device *hid, struct smff_settings4_report *out
 	if (!out_settings || !sm_read_status1(hid, &status1))
 		return false;
 	
-	out_settings->report_id            = SM_SET_WHEEL_SETTINGS1_REPORT;
-	out_settings->unknown_offset_01    = 0x10;
-	out_settings->unknown_offset_02    = 0x39;
-	out_settings->unknown_offset_03    = 0x00;
-	out_settings->unknown_offset_04    = 0x07;
-	out_settings->unknown_offset_05    = status1.unknown_offset_48;
-	out_settings->unknown_offset_06    = status1.unknown_offset_49;
-	out_settings->filter_level         = status1.filter_level;
-	out_settings->unknown_offset_08    = status1.unknown_offset_51;
-	out_settings->slew_rate_control    = status1.slew_rate_control;
+	out_settings->report_id                = SM_SET_WHEEL_SETTINGS1_REPORT;
+	out_settings->unknown_offset_01        = 0x10;
+	out_settings->unknown_offset_02        = 0x39;
+	out_settings->unknown_offset_03        = 0x00;
+	out_settings->unknown_offset_04        = 0x07;
+	out_settings->dynamic_prediction_level = status1.dynamic_prediction_level;
+	out_settings->unknown_offset_06        = status1.unknown_offset_49;
+	out_settings->filter_level             = status1.filter_level;
+	out_settings->unknown_offset_08        = status1.unknown_offset_51;
+	out_settings->slew_rate_control        = status1.slew_rate_control;
+	out_settings->unknown_offset_10        = status1.unknown_offset_53;
+	out_settings->steering_torque_assist   = status1.steering_torque_assist;
 
 	return true;
 }
@@ -252,18 +254,20 @@ static void sm_sanitize_settings4_report(struct hid_device *hid, struct smff_set
 		return;
 
 	if (sm_read_status1(hid, &status1)) {
-		settings->unknown_offset_05 = status1.unknown_offset_48;
 		settings->unknown_offset_06 = status1.unknown_offset_49;
 		settings->unknown_offset_08 = status1.unknown_offset_51;
+		settings->unknown_offset_10 = status1.unknown_offset_53;
 	}
-	
-	settings->report_id            = SM_SET_WHEEL_SETTINGS1_REPORT;
-	settings->unknown_offset_01    = 0x10;
-	settings->unknown_offset_02    = 0x39;
-	settings->unknown_offset_03    = 0x00;
-	settings->unknown_offset_04    = 0x07;
-	settings->filter_level         = clamp_t(u8, settings->filter_level, 0, 20);
-	settings->slew_rate_control    = clamp_t(u8, settings->slew_rate_control, 0, 100);
+
+	settings->report_id                = SM_SET_WHEEL_SETTINGS1_REPORT;
+	settings->unknown_offset_01        = 0x10;
+	settings->unknown_offset_02        = 0x39;
+	settings->unknown_offset_03        = 0x00;
+	settings->unknown_offset_04        = 0x07;
+	settings->dynamic_prediction_level = clamp_t(u8, settings->dynamic_prediction_level, 0, 10);
+	settings->filter_level             = clamp_t(u8, settings->filter_level, 0, 20);
+	settings->slew_rate_control        = clamp_t(u8, settings->slew_rate_control, 0, 100);
+	settings->steering_torque_assist   = clamp_t(u8, settings->steering_torque_assist, 0, 100);
 }
 
 bool sm_write_settings4(struct hid_device *hid, struct smff_settings4_report *in_settings)
