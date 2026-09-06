@@ -25,12 +25,13 @@ struct smff_status1_report {
 	u8 unknown_offset_23;
 	u8 unknown_offset_24[23];
 	u8 ring_light;          // MSB = enabled/disabled, remaining bits brightness 0 .. 100
-	u8 unknown_offset_48;
+	u8 dynamic_prediction_level; // 0 .. 10
 	u8 unknown_offset_49;
 	u8 filter_level;
 	u8 unknown_offset_51;
 	u8 slew_rate_control;
-	u8 unknown_offset_53[2];
+	u8 unknown_offset_53;
+	u8 steering_torque_assist; // 0 .. 100
 	u8 wheel_channel;
 	u8 unknown_offset_55; // voltage?
 	u8 unknown_offset_56[7];
@@ -80,11 +81,13 @@ struct smff_settings4_report {
 	u8 unknown_offset_02;     // always 0x39
 	u8 unknown_offset_03;     // always 0x00 ???
 	u8 unknown_offset_04;     // always 0x07 ???
-	u8 unknown_offset_05;     // same as status1 offset 48
+	u8 dynamic_prediction_level;
 	u8 unknown_offset_06;     // same as status1 offset 49
 	u8 filter_level;
 	u8 unknown_offset_08;     // same as status1 offset 51
 	u8 slew_rate_control;
+	u8 unknown_offset_10;     // same as status1 offset 53
+	u8 steering_torque_assist;
 };
 
 bool sm_read_status1(struct hid_device *hid, struct smff_status1_report *out_status);
