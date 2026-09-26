@@ -74,6 +74,7 @@ SM_SYSFS_ATTR_RW(steering_torque_assist, simagic_attribute_status1_show, simagic
 SM_SYSFS_ATTR_RO(wheel_channel, simagic_attribute_status1_show);
 SM_SYSFS_ATTR_RW(ring_light_enabled, simagic_attribute_status1_show, simagic_attribute_settings3_store);
 SM_SYSFS_ATTR_RW(ring_light_brightness, simagic_attribute_status1_show, simagic_attribute_settings3_store);
+SM_SYSFS_ATTR_RO(fw_version, simagic_attribute_status1_show);
 
 static ssize_t simagic_attribute_status1_show(
 	struct device *dev,
@@ -111,7 +112,7 @@ static ssize_t simagic_attribute_status1_show(
 	else if (attr == &dev_attr_game_friction)
 		value = status1.game_friction;
 	else if (attr == &dev_attr_angle_lock)
-		value = status1.angle_lock;
+		value = le16_to_cpu(status1.angle_lock);
 	else if (attr == &dev_attr_feedback_detail)
 		value = status1.feedback_detail;
 	else if (attr == &dev_attr_angle_lock_strength)
@@ -132,6 +133,8 @@ static ssize_t simagic_attribute_status1_show(
 		value = (status1.ring_light & 0x80) ? 1 : 0;
 	else if (attr == &dev_attr_ring_light_brightness)
 		value = (status1.ring_light & 0x7f);
+	else if (attr == &dev_attr_fw_version)
+		value = le16_to_cpu(status1.firmware_version) % 1000;
 	else
 		return sysfs_emit(buf, "Unknown attribute\n");
 
@@ -306,6 +309,7 @@ void simagic_ff_initsysfs(struct hid_device *hid) {
 	device_create_file(&hid->dev, &dev_attr_wheel_channel);
 	device_create_file(&hid->dev, &dev_attr_dynamic_prediction_level);
 	device_create_file(&hid->dev, &dev_attr_steering_torque_assist);
+	device_create_file(&hid->dev, &dev_attr_fw_version);
 	if (smff->is_alpha_evo) {
 		device_create_file(&hid->dev, &dev_attr_slew_rate_control);
 		device_create_file(&hid->dev, &dev_attr_ring_light_enabled);
@@ -329,6 +333,7 @@ void simagic_ff_removesysfs(struct hid_device *hid) {
 		device_remove_file(&hid->dev, &dev_attr_slew_rate_control);
 	}
 
+	device_remove_file(&hid->dev, &dev_attr_fw_version);
 	device_remove_file(&hid->dev, &dev_attr_wheel_channel);
 	device_remove_file(&hid->dev, &dev_attr_filter_level);
 	device_remove_file(&hid->dev, &dev_attr_angle_lock_strength);

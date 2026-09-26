@@ -33,8 +33,10 @@ struct smff_status1_report {
 	u8 unknown_offset_53;
 	u8 steering_torque_assist; // 0 .. 100
 	u8 wheel_channel;
-	u8 unknown_offset_55; // voltage?
-	u8 unknown_offset_56[7];
+	u8 unknown_offset_56; // voltage?
+	u8 unknown_offset_57;
+	__le16 firmware_version;
+	u8 unknown_offset_59[4];
 };
 
 struct smff_settings1_report {
