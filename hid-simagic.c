@@ -560,6 +560,19 @@ static int simagic_probe(struct hid_device *hdev, const struct hid_device_id *id
 		goto err;
 	}
 
+	/*
+	 * The wheelbase's secondary hiddev-only interface has no FF-capable
+	 * hid_input. hid_hw_start() has already registered its hidraw/hiddev
+	 * nodes; keep the interface claimed with FF unavailable instead of
+	 * failing the probe and leaving those nodes bound to no driver.
+	 * Userspace needs the hidraw node, and a failed probe makes hid_hw_open()
+	 * crash with a NULL hdev->driver deref.
+	 */
+	if (list_empty(&hdev->inputs)) {
+		hid_warn(hdev, "No force feedback (secondary interface)\n");
+		return 0;
+	}
+
 	ret = simagic_ff_initffb(hdev);
 	if (ret) {
 		/*
